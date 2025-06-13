@@ -373,3 +373,11 @@ uint8_t *rotate_rgb_image(
   }
   return rotated;
 }
+
+void free_buffer(uint8_t *buffer)
+{
+  if (buffer != NULL)
+  {
+    free(buffer);
+  }
+}

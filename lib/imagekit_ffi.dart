@@ -58,6 +58,9 @@ class ImageKitFfi {
 
       final rgbaBytes = rgbaPtr.asTypedList(rgbaSize);
 
+      _bindings.free_buffer(jpegPtr);
+      _bindings.free_buffer(rgbaPtr);
+
       return (
         rgbaBytes: Uint8List.fromList(rgbaBytes),
         width: width,
@@ -110,6 +113,7 @@ class ImageKitFfi {
       }
 
       final jpegBytes = jpegPtr.asTypedList(jpegSize);
+      _bindings.free_buffer(jpegPtr);
       return Uint8List.fromList(jpegBytes);
     } finally {
       malloc.free(bgraPtr);
@@ -172,6 +176,7 @@ class ImageKitFfi {
       }
 
       final jpegBytes = jpegPtr.asTypedList(jpegSize);
+      _bindings.free_buffer(jpegPtr);
       return Uint8List.fromList(jpegBytes);
     } finally {
       malloc.free(yPtr);
@@ -229,6 +234,7 @@ class ImageKitFfi {
       }
 
       final jpegBytes = jpegPtr.asTypedList(jpegSize);
+      _bindings.free_buffer(jpegPtr);
       return Uint8List.fromList(jpegBytes);
     } finally {
       malloc.free(yPtr);

@@ -43,3 +43,5 @@ uint8_t *convert_jpeg_to_rgba(
     int jpeg_size,
     int *out_width,
     int *out_height);
+
+void free_buffer(uint8_t *buffer);
