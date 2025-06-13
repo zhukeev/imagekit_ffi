@@ -57,6 +57,52 @@ class _CameraAppState extends State<CameraApp> {
     super.dispose();
   }
 
+  void _processRawCameraImage(CameraImage image) {
+    try {
+      // Плоскости:
+      final yPlane = image.planes[0].bytes;
+      final uPlane = image.planes[1].bytes;
+      final vPlane = image.planes[2].bytes;
+
+      // Размеры:
+      final width = image.width;
+      final height = image.height;
+
+      // Stride (смещение в байтах между строками)
+      final yStride = image.planes[0].bytesPerRow;
+      final uStride = image.planes[1].bytesPerRow;
+      final vStride = image.planes[2].bytesPerRow;
+
+      // Pix stride (шаг между соседними пикселями)
+      final uPixStride = image.planes[1].bytesPerPixel ?? 1;
+      final vPixStride = image.planes[2].bytesPerPixel ?? 1;
+      Stopwatch stopwatch = Stopwatch()..start();
+      memoryImage = ImageKitFfi().convertYuv420ToJpeg(
+        yPlane: yPlane,
+        uPlane: uPlane,
+        vPlane: vPlane,
+        width: width,
+        height: height,
+        yStride: yStride,
+        uStride: uStride,
+        vStride: vStride,
+        uPixStride: uPixStride,
+        vPixStride: vPixStride,
+        rotation: 90,
+      );
+
+      stopwatch.stop();
+      print('Time jpeg: ${stopwatch.elapsedMilliseconds}');
+
+      print('JPEG length: ${memoryImage?.length}');
+
+      setState(() {});
+    } catch (e) {
+      // ignore: avoid_print
+      print(e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!controller.value.isInitialized) {
@@ -73,48 +119,15 @@ class _CameraAppState extends State<CameraApp> {
                     // catch the error.
                     try {
                       final completer = Completer<CameraImage>();
+                      final stopwatch = Stopwatch()..start();
+
                       await controller.startImageStream(completer.complete);
                       final image = await completer.future;
+                      print('Time image: ${stopwatch.elapsedMilliseconds}');
+
                       await controller.stopImageStream();
 
-                      // Плоскости:
-                      final yPlane = image.planes[0].bytes;
-                      final uPlane = image.planes[1].bytes;
-                      final vPlane = image.planes[2].bytes;
-
-                      // Размеры:
-                      final width = image.width;
-                      final height = image.height;
-
-                      // Stride (смещение в байтах между строками)
-                      final yStride = image.planes[0].bytesPerRow;
-                      final uStride = image.planes[1].bytesPerRow;
-                      final vStride = image.planes[2].bytesPerRow;
-
-                      // Pix stride (шаг между соседними пикселями)
-                      final uPixStride = image.planes[1].bytesPerPixel ?? 1;
-                      final vPixStride = image.planes[2].bytesPerPixel ?? 1;
-                      Stopwatch stopwatch = Stopwatch()..start();
-                      memoryImage = ImageKitFfi().convertYuv420ToJpeg(
-                        yPlane: yPlane,
-                        uPlane: uPlane,
-                        vPlane: vPlane,
-                        width: width,
-                        height: height,
-                        yStride: yStride,
-                        uStride: uStride,
-                        vStride: vStride,
-                        uPixStride: uPixStride,
-                        vPixStride: vPixStride,
-                        rotation: 90,
-                      );
-
-                      stopwatch.stop();
-                      print('Time: ${stopwatch.elapsedMilliseconds}');
-
-                      print('JPEG length: ${memoryImage?.length}');
-
-                      setState(() {});
+                      _processRawCameraImage(image);
                     } catch (e) {
                       // ignore: avoid_print
                       print(e);
