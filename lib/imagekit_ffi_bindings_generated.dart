@@ -9013,6 +9013,31 @@ class ImagekitFfiBindings {
               ffi.Int, ffi.Int)>>('rotate_rgb_image');
   late final _rotate_rgb_image = _rotate_rgb_imagePtr.asFunction<
       ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int, int, int)>();
+
+  ffi.Pointer<ffi.Uint8> convert_jpeg_to_rgba(
+    ffi.Pointer<ffi.Uint8> jpeg_data,
+    int jpeg_size,
+    ffi.Pointer<ffi.Int> out_width,
+    ffi.Pointer<ffi.Int> out_height,
+  ) {
+    return _convert_jpeg_to_rgba(
+      jpeg_data,
+      jpeg_size,
+      out_width,
+      out_height,
+    );
+  }
+
+  late final _convert_jpeg_to_rgbaPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint8> Function(
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Int,
+              ffi.Pointer<ffi.Int>,
+              ffi.Pointer<ffi.Int>)>>('convert_jpeg_to_rgba');
+  late final _convert_jpeg_to_rgba = _convert_jpeg_to_rgbaPtr.asFunction<
+      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int,
+          ffi.Pointer<ffi.Int>, ffi.Pointer<ffi.Int>)>();
 }
 
 final class __mbstate_t extends ffi.Union {

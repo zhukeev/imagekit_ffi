@@ -37,3 +37,9 @@ uint8_t *convert_nv21_to_jpeg_rotate(
 
 uint8_t *rotate_rgb_image(
     uint8_t *rgb, int width, int height, int rotationDegrees);
+
+uint8_t *convert_jpeg_to_rgba(
+    const uint8_t *jpeg_data,
+    int jpeg_size,
+    int *out_width,
+    int *out_height);

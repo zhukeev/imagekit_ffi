@@ -29,6 +29,47 @@ final ImagekitFfiBindings _bindings = ImagekitFfiBindings(_dylib);
 
 /// Wrapper class for image conversion functions
 class ImageKitFfi {
+  /// Converts a JPEG image to RGBA8888 format.
+  ///
+  /// Returns a tuple (Uint8List rgbaBytes, int width, int height).
+  /// Throws [Exception] if decoding fails.
+  ({Uint8List rgbaBytes, int width, int height}) convertJpegToRgba(Uint8List jpegBytes) {
+    final jpegPtr = malloc<Uint8>(jpegBytes.length);
+    final widthPtr = malloc<Int>();
+    final heightPtr = malloc<Int>();
+
+    try {
+      jpegPtr.asTypedList(jpegBytes.length).setAll(0, jpegBytes);
+
+      final rgbaPtr = _bindings.convert_jpeg_to_rgba(
+        jpegPtr,
+        jpegBytes.length,
+        widthPtr,
+        heightPtr,
+      );
+
+      if (rgbaPtr == nullptr) {
+        throw Exception('JPEG → RGBA conversion failed (null pointer)');
+      }
+
+      final width = widthPtr.value;
+      final height = heightPtr.value;
+      final rgbaSize = width * height * 4;
+
+      final rgbaBytes = rgbaPtr.asTypedList(rgbaSize);
+
+      return (
+        rgbaBytes: Uint8List.fromList(rgbaBytes),
+        width: width,
+        height: height,
+      );
+    } finally {
+      malloc.free(jpegPtr);
+      malloc.free(widthPtr);
+      malloc.free(heightPtr);
+    }
+  }
+
   /// Converts an image from BGRA8888 format to JPEG with optional rotation
   ///
   /// [bgra] — bytes of the source image in BGRA8888 format

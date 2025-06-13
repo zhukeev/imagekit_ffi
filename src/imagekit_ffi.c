@@ -77,6 +77,62 @@ uint8_t *encode_rgb_to_jpeg(uint8_t *rgb, int width, int height, int *out_size)
   return outbuffer;
 }
 
+uint8_t *convert_jpeg_to_rgba(
+    const uint8_t *jpeg_data,
+    int jpeg_size,
+    int *out_width,
+    int *out_height)
+{
+  struct jpeg_decompress_struct cinfo;
+  struct my_error_mgr jerr;
+
+  cinfo.err = jpeg_std_error(&jerr.pub);
+  jerr.pub.error_exit = my_error_exit;
+
+  if (setjmp(jerr.setjmp_buffer))
+  {
+    jpeg_destroy_decompress(&cinfo);
+    return NULL;
+  }
+
+  jpeg_create_decompress(&cinfo);
+  jpeg_mem_src(&cinfo, jpeg_data, jpeg_size);
+  jpeg_read_header(&cinfo, TRUE);
+  jpeg_start_decompress(&cinfo);
+
+  int width = cinfo.output_width;
+  int height = cinfo.output_height;
+  int channels = cinfo.output_components; // should be 3 (RGB)
+
+  *out_width = width;
+  *out_height = height;
+
+  uint8_t *rgba = (uint8_t *)malloc(width * height * 4);
+  if (!rgba)
+    return NULL;
+
+  JSAMPARRAY buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, width * channels, 1);
+
+  while (cinfo.output_scanline < cinfo.output_height)
+  {
+    jpeg_read_scanlines(&cinfo, buffer, 1);
+    for (int x = 0; x < width; x++)
+    {
+      int rgb_offset = x * channels;
+      int out_offset = ((cinfo.output_scanline - 1) * width + x) * 4;
+      rgba[out_offset + 0] = buffer[0][rgb_offset + 0]; // R
+      rgba[out_offset + 1] = buffer[0][rgb_offset + 1]; // G
+      rgba[out_offset + 2] = buffer[0][rgb_offset + 2]; // B
+      rgba[out_offset + 3] = 255;                       // A
+    }
+  }
+
+  jpeg_finish_decompress(&cinfo);
+  jpeg_destroy_decompress(&cinfo);
+
+  return rgba;
+}
+
 // BGRA8888 to JPEG with rotation
 uint8_t *convert_bgra8888_to_jpeg_rotate(
     uint8_t *bgra,
