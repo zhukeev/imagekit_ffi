@@ -33,7 +33,8 @@ class ImageKitFfi {
   ///
   /// Returns a tuple (Uint8List rgbaBytes, int width, int height).
   /// Throws [Exception] if decoding fails.
-  ({Uint8List rgbaBytes, int width, int height}) convertJpegToRgba(Uint8List jpegBytes) {
+  ({Uint8List rgbaBytes, int width, int height}) convertJpegToRgba(
+      Uint8List jpegBytes) {
     final jpegPtr = malloc<Uint8>(jpegBytes.length);
     final widthPtr = malloc<Int>();
     final heightPtr = malloc<Int>();
