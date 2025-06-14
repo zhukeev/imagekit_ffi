@@ -41,6 +41,32 @@ pubspec.lock # Generally ignore pubspec.lock for packages
 /third_party/libjpeg-turbo/build-linux/**
 /third_party/libjpeg-turbo/build-windows/**
 
+# <--- NEW ADDITION: Explicitly UN-IGNORE these files for PUBLISHING --->
+# This tells Pub that despite the above general ignore, these specific files *should* be published.
+!/third_party/libjpeg-turbo/build-android-arm64-v8a/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-arm64-v8a/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-android-arm64/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-arm64/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-android-armeabi-v7a/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-armeabi-v7a/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-android-x86/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-x86/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-android-x86_64/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-x86_64/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-ios/Release-iphoneos/libjpeg.a
+!/third_party/libjpeg-turbo/build-ios/Release-iphoneos/libturbojpeg.a
+
+# Add similar lines for other platforms if you're pre-compiling for them
+# !/third_party/libjpeg-turbo/build-macos/libjpeg.a
+# !/third_party/libjpeg-turbo/build-linux/libjpeg.a
+# !/third_party/libjpeg-turbo/build-windows/libjpeg.lib # Note: .lib for Windows
+
+
 # CMake generated files and temporary files (local build artifacts)
 **/CMakeCache.txt
 **/CMakeFiles/
