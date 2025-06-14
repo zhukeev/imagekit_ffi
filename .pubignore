@@ -1,0 +1,161 @@
+# .pubignore - Files to *not* publish to pub.dev
+
+# Standard Flutter/Dart build outputs
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+pubspec.lock # Generally ignore pubspec.lock for packages
+
+# IDE-specific files
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+
+# macOS specific
+.DS_Store
+
+# C/C++ general build artifacts (these are temporary/local outputs)
+# These are generated during your plugin's build, not necessarily part of the source you ship.
+**/*.o
+**/*.obj
+**/*.so # Your plugin's *final* shared lib, when built into 'build/', should be excluded by 'build/'.
+**/*.dylib
+**/*.dll
+**/*.exe
+**/*.d
+
+# Third-party library specific ignores for *temporary* build outputs
+# IGNORE all contents of the build directories, without UN-ignoring the .a files here.
+# The .a files are already tracked by Git, and since they are NOT ignored by .pubignore,
+/third_party/libjpeg-turbo/build-android-arm64-v8a/**
+/third_party/libjpeg-turbo/build-android-arm64/**
+/third_party/libjpeg-turbo/build-android-armeabi-v7a/**
+/third_party/libjpeg-turbo/build-android-x86/**
+/third_party/libjpeg-turbo/build-android-x86_64/**
+/third_party/libjpeg-turbo/build-ios/**
+/third_party/libjpeg-turbo/build-macos/**
+/third_party/libjpeg-turbo/build-linux/**
+/third_party/libjpeg-turbo/build-windows/**
+
+!/third_party/libjpeg-turbo/build-android-arm64-v8a/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-arm64-v8a/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-android-arm64/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-arm64/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-android-armeabi-v7a/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-armeabi-v7a/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-android-x86/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-x86/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-android-x86_64/libjpeg.a
+!/third_party/libjpeg-turbo/build-android-x86_64/libturbojpeg.a
+
+!/third_party/libjpeg-turbo/build-ios/Release-iphoneos/libjpeg.a
+!/third_party/libjpeg-turbo/build-ios/Release-iphoneos/libturbojpeg.a
+
+
+# CMake generated files and temporary files (local build artifacts)
+**/CMakeCache.txt
+**/CMakeFiles/
+**/CPackConfig.cmake
+**/CTestTestfile.cmake
+**/_CPack_Packages/
+**/_deps/
+**/DartConfiguration.tcl
+**/Makefile
+**/cmake_install.cmake
+**/install_manifest.txt
+**/compile_commands.json
+**/build.ninja
+**/rules.ninja
+
+# Temporary and log files
+*.log
+*.tmp
+*~
+
+# Example app specific build outputs (don't publish the example's build)
+/example/android/build/
+/example/android/.gradle/
+/example/android/local.properties
+/example/android/*.apk
+/example/android/*.aab
+/example/android/*.ap_
+/example/android/*.dex
+/example/android/*.class
+/example/ios/Pods/
+/example/ios/.symlinks/
+/example/ios/Flutter/.last_build_id
+/example/ios/Flutter/App.framework
+/example/ios/Flutter/Flutter.framework
+/example/ios/Flutter/Generated.xcconfig
+/example/ios/Flutter/ephemeral
+/example/ios/Runner.xcworkspace/contents.xcworkspacedata
+/example/ios/*.pbxuser
+/example/ios/*.xcworkspace/
+/example/ios/Runner.xcodeproj/xcuserdata/
+/example/ios/Runner.xcworkspace/xcuserdata/
+/example/build/
+/example/.dart_tool/
+/example/.packages
+/example/.flutter-plugins
+/example/.flutter-plugins-dependencies
+
+# Windows specific build output
+/windows/build/
+/windows/x64/
+/windows/Debug/
+/windows/Release/
+/windows/out/
+/windows/*.exe
+/windows/*.dll
+/windows/*.obj
+/windows/*.pdb
+/windows/*.exp
+Thumbs.db
+Desktop.ini
+
+# Linux specific build output
+/linux/build/
+/linux/out/
+
+# Other CMake build artifacts
+CMakeLists.txt.user
+CTestCustom.cmake
+.build/
+.vs/
+*.vcxproj.user
+*.suo
+*.user
+*.opendb
+*.opensdf
+*.VC.db
+*.VC.opendb
+ipch/
+*.aps
+*.res
+*.rc.user
+*.bsc
+*.sbr
+*.tlb
+*.tlh
+*.tli
+*.tmp
+*.log
+*.bak
+*.ncb
+*.pyc
+*.pyo
+*.swp
+*.swo
+*.orig
+*.rej
+*.gch
+
+# FFIgen temp directory
+.ffigen_tmp/
