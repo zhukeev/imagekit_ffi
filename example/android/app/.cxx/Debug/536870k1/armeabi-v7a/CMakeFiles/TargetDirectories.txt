@@ -1,2 +1,0 @@
-/Users/argenzhukeev/projects/imagekit_ffi/example/android/app/.cxx/Debug/536870k1/armeabi-v7a/CMakeFiles/edit_cache.dir
-/Users/argenzhukeev/projects/imagekit_ffi/example/android/app/.cxx/Debug/536870k1/armeabi-v7a/CMakeFiles/rebuild_cache.dir

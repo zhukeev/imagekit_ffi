@@ -1,1 +1,0 @@
-/Users/argenzhukeev/projects/imagekit_ffi/example/build/app/intermediates/cxx/Debug/536870k1/obj/arm64-v8a
