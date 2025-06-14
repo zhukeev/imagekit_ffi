@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -98,7 +100,6 @@ class _CameraAppState extends State<CameraApp> {
 
       setState(() {});
     } catch (e) {
-      // ignore: avoid_print
       print(e);
     }
   }
@@ -129,7 +130,6 @@ class _CameraAppState extends State<CameraApp> {
 
                       _processRawCameraImage(image);
                     } catch (e) {
-                      // ignore: avoid_print
                       print(e);
                     }
                   }
