@@ -242,4 +242,61 @@ class ImageKitFfi {
       malloc.free(outSizePtr);
     }
   }
+
+  /// Rotates an RGB image buffer by 0, 90, 180, or 270 degrees.
+  ///
+  /// - [rgb]: The raw RGB byte data (3 bytes per pixel, tightly packed).
+  /// - [width]: The width of the original image (in pixels).
+  /// - [height]: The height of the original image (in pixels).
+  /// - [rotation]: The rotation angle in degrees (must be 0, 90, 180, or 270).
+  ///
+  /// Returns a new [Uint8List] containing the rotated image data.
+  ///
+  /// Throws an [Exception] if the rotation fails (null pointer or invalid output).
+  Uint8List rotateRgbImage({
+    required Uint8List rgb,
+    required int width,
+    required int height,
+    required int rotation,
+  }) {
+    // Allocate memory for the input RGB image data
+    final rgbPtr = malloc<Uint8>(rgb.length);
+
+    try {
+      // Copy Dart RGB data into the allocated C memory
+      rgbPtr.asTypedList(rgb.length).setAll(0, rgb);
+
+      // Call the native C function to rotate the image
+      final rotatedPtr = _bindings.rotate_rgb_image(
+        rgbPtr,
+        width,
+        height,
+        rotation,
+      );
+
+      // Check for null pointer (error during C allocation or logic)
+      if (rotatedPtr == nullptr) {
+        throw Exception('RGB rotation failed: null pointer returned');
+      }
+
+      // Determine the dimensions of the rotated image
+      final rotatedWidth = (rotation % 180 == 0) ? width : height;
+      final rotatedHeight = (rotation % 180 == 0) ? height : width;
+
+      // Each pixel is 3 bytes (RGB)
+      final outputLength = rotatedWidth * rotatedHeight * 3;
+
+      // Read the rotated image from native memory into a Dart Uint8List
+      final rotatedBytes = rotatedPtr.asTypedList(outputLength);
+      final result = Uint8List.fromList(rotatedBytes);
+
+      // Free the rotated buffer allocated in C
+      _bindings.free_buffer(rotatedPtr);
+
+      return result;
+    } finally {
+      // Always free the input buffer to avoid memory leaks
+      malloc.free(rgbPtr);
+    }
+  }
 }
