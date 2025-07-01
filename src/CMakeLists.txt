@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
+include "../third_party/fpng/fpng.h"
 
 project(imagekit_ffi_library VERSION 0.0.1 LANGUAGES C)
 
@@ -6,35 +7,19 @@ add_library(imagekit_ffi SHARED
   "imagekit_ffi.c"
 )
 
-set(JPEG_TURBO_ROOT ${PROJECT_SOURCE_DIR}/../third_party/libjpeg-turbo)
-set(JPEG_TURBO_INCLUDE_DIR ${JPEG_TURBO_ROOT}/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/fpng)
 
-# --- Platform-specific lib path ---
-if(ANDROID)
-  if(${ANDROID_ABI} STREQUAL "armeabi-v7a")
-    set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-android-armeabi-v7a/libjpeg.a)
-  elseif(${ANDROID_ABI} STREQUAL "arm64-v8a")
-    set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-android-arm64-v8a/libjpeg.a)
-  elseif(${ANDROID_ABI} STREQUAL "x86")
-    set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-android-x86/libjpeg.a)
-  elseif(${ANDROID_ABI} STREQUAL "x86_64")
-    set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-android-x86_64/libjpeg.a)
-  else()
-    message(FATAL_ERROR "Unsupported ANDROID_ABI: ${ANDROID_ABI}")
-  endif()
+add_library(imagekit SHARED
+                imagekit.c
+                    png_wrapper.cpp
+                    third_party/fpng/fpng.cpp)
 
-  include_directories(${JPEG_TURBO_INCLUDE_DIR})
-  target_link_libraries(imagekit_ffi PRIVATE ${JPEG_TURBO_LIB})
+add_executable(test_png
+    test_png.cpp    
+    png_wrapper.cpp
+    third_party/fpng/fpng.cpp
+)
 
-  # Android 16k page size support
-  target_link_options(imagekit_ffi PRIVATE "-Wl,-z,max-page-size=16384")
-
-elseif(APPLE AND NOT ANDROID)
-  set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-ios/Release-iphoneos/libjpeg.a)
-
-  include_directories(${JPEG_TURBO_INCLUDE_DIR})
-  target_link_libraries(imagekit_ffi PRIVATE ${JPEG_TURBO_LIB})
-endif()
 
 # --- Plugin settings ---
 set_target_properties(imagekit_ffi PROPERTIES

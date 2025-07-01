@@ -1,2 +1,0 @@
-dependencies: \
-  /Users/argenzhukeev/projects/imagekit_ffi/third_party/libjpeg-turbo/build-ios/CMakeFiles/3.28.3/CompilerIdC/CMakeCCompilerId.c

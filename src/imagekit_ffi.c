@@ -5,7 +5,23 @@
 #include <stdint.h>
 #include <string.h>
 #include <setjmp.h>
-#include <jpeglib.h>
+#include "png_wrapper.h"
+
+int convert_bgra_to_png_file(uint8_t *bgra, int width, int height, const char *path)
+{
+  uint8_t *rgba = malloc(width * height * 4);
+  for (int i = 0; i < width * height; ++i)
+  {
+    rgba[i * 4 + 0] = bgra[i * 4 + 2];
+    rgba[i * 4 + 1] = bgra[i * 4 + 1];
+    rgba[i * 4 + 2] = bgra[i * 4 + 0];
+    rgba[i * 4 + 3] = bgra[i * 4 + 3];
+  }
+
+  int result = save_rgba_to_png(path, rgba, width, height);
+  free(rgba);
+  return result;
+}
 
 static inline uint8_t clamp(int val)
 {
