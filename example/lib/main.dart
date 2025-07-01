@@ -79,7 +79,7 @@ class _CameraAppState extends State<CameraApp> {
       final uPixStride = image.planes[1].bytesPerPixel ?? 1;
       final vPixStride = image.planes[2].bytesPerPixel ?? 1;
       Stopwatch stopwatch = Stopwatch()..start();
-      memoryImage = ImageKitFfi().convertYuv420ToJpeg(
+      memoryImage = ImageKitFfi().convertYuv420ToPngBuffer(
         yPlane: yPlane,
         uPlane: uPlane,
         vPlane: vPlane,
@@ -90,7 +90,6 @@ class _CameraAppState extends State<CameraApp> {
         vStride: vStride,
         uPixStride: uPixStride,
         vPixStride: vPixStride,
-        rotation: 90,
       );
 
       stopwatch.stop();

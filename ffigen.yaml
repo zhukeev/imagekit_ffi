@@ -10,6 +10,8 @@ headers:
     - 'src/imagekit_ffi.h'
   include-directives:
     - 'src/imagekit_ffi.h'
+    - 'src/png_wrapper.h'
+    - 'third_party/fpng/fpng.h'
 preamble: |
   // ignore_for_file: always_specify_types
   // ignore_for_file: camel_case_types
