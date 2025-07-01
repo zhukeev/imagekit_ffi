@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
@@ -79,19 +80,26 @@ class _CameraAppState extends State<CameraApp> {
       final uPixStride = image.planes[1].bytesPerPixel ?? 1;
       final vPixStride = image.planes[2].bytesPerPixel ?? 1;
       Stopwatch stopwatch = Stopwatch()..start();
-      memoryImage = ImageKitFfi().convertYuv420ToJpeg(
-        yPlane: yPlane,
-        uPlane: uPlane,
-        vPlane: vPlane,
-        width: width,
-        height: height,
-        yStride: yStride,
-        uStride: uStride,
-        vStride: vStride,
-        uPixStride: uPixStride,
-        vPixStride: vPixStride,
-        rotation: 90,
-      );
+      if (Platform.isAndroid) {
+        memoryImage = ImageKitFfi().convertYuv420ToPngBuffer(
+          yPlane: yPlane,
+          uPlane: uPlane,
+          vPlane: vPlane,
+          width: width,
+          height: height,
+          yStride: yStride,
+          uStride: uStride,
+          vStride: vStride,
+          uPixStride: uPixStride,
+          vPixStride: vPixStride,
+        );
+      } else {
+        memoryImage = ImageKitFfi().convertBgraToPngBuffer(
+          yPlane,
+          width,
+          height,
+        );
+      }
 
       stopwatch.stop();
       print('Time jpeg: ${stopwatch.elapsedMilliseconds}');

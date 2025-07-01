@@ -11,8 +11,6 @@ Pod::Spec.new do |s|
   s.public_header_files = 'src/imagekit_ffi.h'
   s.module_name      = 'imagekit_ffi'
 
-  s.preserve_paths = 'third_party/libjpeg-turbo/build-ios/Release-iphoneos/libjpeg.a'
-  s.vendored_libraries = 'third_party/libjpeg-turbo/build-ios/Release-iphoneos/libjpeg.a'
   s.header_mappings_dir = 'src'
   s.requires_arc    = false
 end

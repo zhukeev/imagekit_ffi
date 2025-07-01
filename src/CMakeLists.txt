@@ -1,40 +1,39 @@
 cmake_minimum_required(VERSION 3.10)
+# Добавил CXX, так как у вас есть C++ файлы (.cpp)
+project(imagekit_ffi_library VERSION 0.0.1 LANGUAGES C CXX)
 
-project(imagekit_ffi_library VERSION 0.0.1 LANGUAGES C)
+# Правильный путь для include_directories.
+# ${CMAKE_CURRENT_SOURCE_DIR} - это директория, где находится текущий CMakeLists.txt (src/)
+# third_party/fpng - это поддиректория внутри src/, поэтому так и указываем.
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/fpng)
 
+# Включаем сюда все файлы, которые должны быть скомпилированы в эту общую библиотеку.
 add_library(imagekit_ffi SHARED
-  "imagekit_ffi.c"
+  imagekit_ffi.c         # Ваш основной FFI файл
+  png_wrapper.cpp        # C++ обертка для PNG
+  ../third_party/fpng/fpng.cpp # Библиотека fpng
 )
 
-set(JPEG_TURBO_ROOT ${PROJECT_SOURCE_DIR}/../third_party/libjpeg-turbo)
-set(JPEG_TURBO_INCLUDE_DIR ${JPEG_TURBO_ROOT}/src)
+# Это должно быть добавлено для всех целевых архитектур x86/x64
+target_compile_options(imagekit_ffi PRIVATE
+  $<$<CXX_COMPILER_ID:Clang>:-mpclmul -msse4.1> # Для Clang (Android NDK)
+  $<$<CXX_COMPILER_ID:GNU>:-mpclmul -msse4.1>  # Для GCC (если вдруг используется)
+)
 
-# --- Platform-specific lib path ---
-if(ANDROID)
-  if(${ANDROID_ABI} STREQUAL "armeabi-v7a")
-    set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-android-armeabi-v7a/libjpeg.a)
-  elseif(${ANDROID_ABI} STREQUAL "arm64-v8a")
-    set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-android-arm64-v8a/libjpeg.a)
-  elseif(${ANDROID_ABI} STREQUAL "x86")
-    set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-android-x86/libjpeg.a)
-  elseif(${ANDROID_ABI} STREQUAL "x86_64")
-    set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-android-x86_64/libjpeg.a)
-  else()
-    message(FATAL_ERROR "Unsupported ANDROID_ABI: ${ANDROID_ABI}")
-  endif()
+# Определение исполняемого файла для тестов.
+# test_png.c - это ваш тестовый файл.
+# png_wrapper.cpp и third_party/fpng/fpng.cpp здесь дублируются.
+# Если test_png.c вызывает функции из imagekit_ffi (которая теперь включает эти файлы),
+# то лучше просто связать test_png с imagekit_ffi.
+add_executable(test_png
+    test_png.c    # Предполагается, что test_png.c содержит main() и вызывает функции.
+)
 
-  include_directories(${JPEG_TURBO_INCLUDE_DIR})
-  target_link_libraries(imagekit_ffi PRIVATE ${JPEG_TURBO_LIB})
+# Связываем test_png с библиотекой imagekit_ffi.
+# Это значит, что test_png может вызывать функции, определенные в imagekit_ffi.c,
+# png_wrapper.cpp и fpng.cpp (так как они теперь часть imagekit_ffi).
+target_link_libraries(test_png PRIVATE imagekit_ffi)
 
-  # Android 16k page size support
-  target_link_options(imagekit_ffi PRIVATE "-Wl,-z,max-page-size=16384")
-
-elseif(APPLE AND NOT ANDROID)
-  set(JPEG_TURBO_LIB ${JPEG_TURBO_ROOT}/build-ios/Release-iphoneos/libjpeg.a)
-
-  include_directories(${JPEG_TURBO_INCLUDE_DIR})
-  target_link_libraries(imagekit_ffi PRIVATE ${JPEG_TURBO_LIB})
-endif()
 
 # --- Plugin settings ---
 set_target_properties(imagekit_ffi PROPERTIES
