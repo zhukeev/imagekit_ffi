@@ -1,6 +1,6 @@
 name: imagekit_ffi
 description: A fast image conversion plugin with FFI.
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/zhukeev/imagekit_ffi
 issue_tracker: https://github.com/zhukeev/spoiler_widget/issues
 

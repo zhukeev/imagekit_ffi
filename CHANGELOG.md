@@ -1,3 +1,7 @@
+## 0.0.3
+
+* added rotation
+
 ## 0.0.2
 
 * **Feature:** Switched all image output formats from JPEG to **PNG**.

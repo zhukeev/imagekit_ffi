@@ -16,25 +16,101 @@ class ImagekitFfiBindings {
   ImagekitFfiBindings.fromLookup(ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup)
       : _lookup = lookup;
 
-  bool save_rgba_to_png(
-    ffi.Pointer<ffi.Char> filename,
-    ffi.Pointer<ffi.Uint8> rgba,
-    int width,
-    int height,
+  void free_buffer(
+    ffi.Pointer<ffi.Uint8> buffer,
   ) {
-    return _save_rgba_to_png(
-      filename,
-      rgba,
-      width,
-      height,
+    return _free_buffer(
+      buffer,
     );
   }
 
-  late final _save_rgba_to_pngPtr =
-      _lookup<ffi.NativeFunction<ffi.Bool Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int)>>(
-          'save_rgba_to_png');
-  late final _save_rgba_to_png =
-      _save_rgba_to_pngPtr.asFunction<bool Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Uint8>, int, int)>();
+  late final _free_bufferPtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>>('free_buffer');
+  late final _free_buffer = _free_bufferPtr.asFunction<void Function(ffi.Pointer<ffi.Uint8>)>();
+
+  ffi.Pointer<ffi.Uint8> rotate_rgba_image(
+    ffi.Pointer<ffi.Uint8> rgba,
+    int width,
+    int height,
+    int rotationDegrees,
+  ) {
+    return _rotate_rgba_image(
+      rgba,
+      width,
+      height,
+      rotationDegrees,
+    );
+  }
+
+  late final _rotate_rgba_imagePtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Int)>>(
+          'rotate_rgba_image');
+  late final _rotate_rgba_image =
+      _rotate_rgba_imagePtr.asFunction<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int, int, int)>();
+
+  ffi.Pointer<ffi.Uint8> convert_yuv420_to_rgba(
+    ffi.Pointer<ffi.Uint8> y_plane,
+    ffi.Pointer<ffi.Uint8> u_plane,
+    ffi.Pointer<ffi.Uint8> v_plane,
+    int width,
+    int height,
+    int y_stride,
+    int u_stride,
+    int v_stride,
+    int u_pix_stride,
+    int v_pix_stride,
+    int rotationDegrees,
+  ) {
+    return _convert_yuv420_to_rgba(
+      y_plane,
+      u_plane,
+      v_plane,
+      width,
+      height,
+      y_stride,
+      u_stride,
+      v_stride,
+      u_pix_stride,
+      v_pix_stride,
+      rotationDegrees,
+    );
+  }
+
+  late final _convert_yuv420_to_rgbaPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>,
+              ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int)>>('convert_yuv420_to_rgba');
+  late final _convert_yuv420_to_rgba = _convert_yuv420_to_rgbaPtr.asFunction<
+      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int,
+          int, int, int, int, int, int)>();
+
+  ffi.Pointer<ffi.Uint8> convert_nv21_to_rgba(
+    ffi.Pointer<ffi.Uint8> y_plane,
+    ffi.Pointer<ffi.Uint8> uv_plane,
+    int width,
+    int height,
+    int y_stride,
+    int uv_stride,
+    int uv_pix_stride,
+    int rotationDegrees,
+  ) {
+    return _convert_nv21_to_rgba(
+      y_plane,
+      uv_plane,
+      width,
+      height,
+      y_stride,
+      uv_stride,
+      uv_pix_stride,
+      rotationDegrees,
+    );
+  }
+
+  late final _convert_nv21_to_rgbaPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Int,
+              ffi.Int, ffi.Int, ffi.Int)>>('convert_nv21_to_rgba');
+  late final _convert_nv21_to_rgba = _convert_nv21_to_rgbaPtr.asFunction<
+      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int, int, int, int, int)>();
 
   ffi.Pointer<ffi.Uint8> encode_rgba_to_png_buffer(
     ffi.Pointer<ffi.Uint8> rgba,
@@ -57,49 +133,7 @@ class ImagekitFfiBindings {
   late final _encode_rgba_to_png_buffer = _encode_rgba_to_png_bufferPtr
       .asFunction<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int, int, ffi.Pointer<ffi.Size>)>();
 
-  ffi.Pointer<ffi.Uint8> convert_png_to_rgba(
-    ffi.Pointer<ffi.Uint8> png_data,
-    int png_size,
-    ffi.Pointer<ffi.Int> width,
-    ffi.Pointer<ffi.Int> height,
-  ) {
-    return _convert_png_to_rgba(
-      png_data,
-      png_size,
-      width,
-      height,
-    );
-  }
-
-  late final _convert_png_to_rgbaPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Uint8> Function(
-              ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Pointer<ffi.Int>, ffi.Pointer<ffi.Int>)>>('convert_png_to_rgba');
-  late final _convert_png_to_rgba = _convert_png_to_rgbaPtr.asFunction<
-      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int, ffi.Pointer<ffi.Int>, ffi.Pointer<ffi.Int>)>();
-
-  ffi.Pointer<ffi.Uint8> convert_bgra_to_png_buffer(
-    ffi.Pointer<ffi.Uint8> bgra,
-    int width,
-    int height,
-    ffi.Pointer<ffi.Size> out_size,
-  ) {
-    return _convert_bgra_to_png_buffer(
-      bgra,
-      width,
-      height,
-      out_size,
-    );
-  }
-
-  late final _convert_bgra_to_png_bufferPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Uint8> Function(
-              ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Pointer<ffi.Size>)>>('convert_bgra_to_png_buffer');
-  late final _convert_bgra_to_png_buffer = _convert_bgra_to_png_bufferPtr
-      .asFunction<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int, int, ffi.Pointer<ffi.Size>)>();
-
-  ffi.Pointer<ffi.Uint8> convert_yuv420_to_png_buffer(
+  ffi.Pointer<ffi.Uint8> convert_yuv420_to_png(
     ffi.Pointer<ffi.Uint8> y_plane,
     ffi.Pointer<ffi.Uint8> u_plane,
     ffi.Pointer<ffi.Uint8> v_plane,
@@ -110,115 +144,10 @@ class ImagekitFfiBindings {
     int v_stride,
     int u_pix_stride,
     int v_pix_stride,
-    ffi.Pointer<ffi.Size> out_size,
-  ) {
-    return _convert_yuv420_to_png_buffer(
-      y_plane,
-      u_plane,
-      v_plane,
-      width,
-      height,
-      y_stride,
-      u_stride,
-      v_stride,
-      u_pix_stride,
-      v_pix_stride,
-      out_size,
-    );
-  }
-
-  late final _convert_yuv420_to_png_bufferPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Uint8> Function(
-              ffi.Pointer<ffi.Uint8>,
-              ffi.Pointer<ffi.Uint8>,
-              ffi.Pointer<ffi.Uint8>,
-              ffi.Int,
-              ffi.Int,
-              ffi.Int,
-              ffi.Int,
-              ffi.Int,
-              ffi.Int,
-              ffi.Int,
-              ffi.Pointer<ffi.Size>)>>('convert_yuv420_to_png_buffer');
-  late final _convert_yuv420_to_png_buffer = _convert_yuv420_to_png_bufferPtr.asFunction<
-      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int,
-          int, int, int, int, int, ffi.Pointer<ffi.Size>)>();
-
-  ffi.Pointer<ffi.Uint8> convert_nv21_to_png_buffer(
-    ffi.Pointer<ffi.Uint8> y_plane,
-    ffi.Pointer<ffi.Uint8> uv_plane,
-    int width,
-    int height,
-    int y_stride,
-    int uv_stride,
-    int uv_pix_stride,
-    ffi.Pointer<ffi.Size> out_size,
-  ) {
-    return _convert_nv21_to_png_buffer(
-      y_plane,
-      uv_plane,
-      width,
-      height,
-      y_stride,
-      uv_stride,
-      uv_pix_stride,
-      out_size,
-    );
-  }
-
-  late final _convert_nv21_to_png_bufferPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Int,
-              ffi.Int, ffi.Int, ffi.Pointer<ffi.Size>)>>('convert_nv21_to_png_buffer');
-  late final _convert_nv21_to_png_buffer = _convert_nv21_to_png_bufferPtr.asFunction<
-      ffi.Pointer<ffi.Uint8> Function(
-          ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int, int, int, int, ffi.Pointer<ffi.Size>)>();
-
-  ffi.Pointer<ffi.Uint8> rotate_rgb_image(
-    ffi.Pointer<ffi.Uint8> rgb,
-    int width,
-    int height,
     int rotationDegrees,
+    ffi.Pointer<ffi.Size> out_size,
   ) {
-    return _rotate_rgb_image(
-      rgb,
-      width,
-      height,
-      rotationDegrees,
-    );
-  }
-
-  late final _rotate_rgb_imagePtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Int)>>(
-          'rotate_rgb_image');
-  late final _rotate_rgb_image =
-      _rotate_rgb_imagePtr.asFunction<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int, int, int)>();
-
-  void free_buffer(
-    ffi.Pointer<ffi.Uint8> buffer,
-  ) {
-    return _free_buffer(
-      buffer,
-    );
-  }
-
-  late final _free_bufferPtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>>('free_buffer');
-  late final _free_buffer = _free_bufferPtr.asFunction<void Function(ffi.Pointer<ffi.Uint8>)>();
-
-  ffi.Pointer<ffi.Uint8> convert_yuv420_to_rgba(
-    ffi.Pointer<ffi.Uint8> y_plane,
-    ffi.Pointer<ffi.Uint8> u_plane,
-    ffi.Pointer<ffi.Uint8> v_plane,
-    int width,
-    int height,
-    int y_stride,
-    int u_stride,
-    int v_stride,
-    int u_pix_stride,
-    int v_pix_stride,
-  ) {
-    return _convert_yuv420_to_rgba(
+    return _convert_yuv420_to_png(
       y_plane,
       u_plane,
       v_plane,
@@ -229,18 +158,31 @@ class ImagekitFfiBindings {
       v_stride,
       u_pix_stride,
       v_pix_stride,
+      rotationDegrees,
+      out_size,
     );
   }
 
-  late final _convert_yuv420_to_rgbaPtr = _lookup<
+  late final _convert_yuv420_to_pngPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>,
-              ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int)>>('convert_yuv420_to_rgba');
-  late final _convert_yuv420_to_rgba = _convert_yuv420_to_rgbaPtr.asFunction<
-      ffi.Pointer<ffi.Uint8> Function(
-          ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int, int, int, int, int, int)>();
+          ffi.Pointer<ffi.Uint8> Function(
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Pointer<ffi.Size>)>>('convert_yuv420_to_png');
+  late final _convert_yuv420_to_png = _convert_yuv420_to_pngPtr.asFunction<
+      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int,
+          int, int, int, int, int, int, ffi.Pointer<ffi.Size>)>();
 
-  ffi.Pointer<ffi.Uint8> convert_nv21_to_rgba(
+  ffi.Pointer<ffi.Uint8> convert_nv21_to_png(
     ffi.Pointer<ffi.Uint8> y_plane,
     ffi.Pointer<ffi.Uint8> uv_plane,
     int width,
@@ -248,8 +190,10 @@ class ImagekitFfiBindings {
     int y_stride,
     int uv_stride,
     int uv_pix_stride,
+    int rotationDegrees,
+    ffi.Pointer<ffi.Size> out_size,
   ) {
-    return _convert_nv21_to_rgba(
+    return _convert_nv21_to_png(
       y_plane,
       uv_plane,
       width,
@@ -257,15 +201,18 @@ class ImagekitFfiBindings {
       y_stride,
       uv_stride,
       uv_pix_stride,
+      rotationDegrees,
+      out_size,
     );
   }
 
-  late final _convert_nv21_to_rgbaPtr = _lookup<
+  late final _convert_nv21_to_pngPtr = _lookup<
       ffi.NativeFunction<
           ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Int,
-              ffi.Int, ffi.Int)>>('convert_nv21_to_rgba');
-  late final _convert_nv21_to_rgba = _convert_nv21_to_rgbaPtr.asFunction<
-      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int, int, int, int)>();
+              ffi.Int, ffi.Int, ffi.Int, ffi.Pointer<ffi.Size>)>>('convert_nv21_to_png');
+  late final _convert_nv21_to_png = _convert_nv21_to_pngPtr.asFunction<
+      ffi.Pointer<ffi.Uint8> Function(
+          ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int, int, int, int, int, ffi.Pointer<ffi.Size>)>();
 }
 
 const int INT8_MAX = 127;
@@ -371,9 +318,5 @@ const int WINT_MAX = 2147483647;
 const int SIG_ATOMIC_MIN = -2147483648;
 
 const int SIG_ATOMIC_MAX = 2147483647;
-
-const int true1 = 1;
-
-const int false1 = 0;
 
 const int NULL = 0;
