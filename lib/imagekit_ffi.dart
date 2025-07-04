@@ -32,8 +32,7 @@ class ImageKitFfi {
     }
   }
 
-  /// Конвертация YUV420 -> PNG с поворотом
-  Uint8List convertYuv420ToPngBuffer({
+  Uint8List convertYuv420ToJpegBuffer({
     required Uint8List yPlane,
     required Uint8List uPlane,
     required Uint8List vPlane,
@@ -45,19 +44,20 @@ class ImageKitFfi {
     int uPixStride = 1,
     int vPixStride = 1,
     int rotationDegrees = 0,
+    int quality = 90,
   }) {
     final yPtr = malloc<Uint8>(yPlane.length);
     final uPtr = malloc<Uint8>(uPlane.length);
     final vPtr = malloc<Uint8>(vPlane.length);
     final outSizePtr = malloc<Size>();
-    Pointer<Uint8> pngPtr = nullptr;
+    Pointer<Uint8> jpegPtr = nullptr;
 
     try {
       yPtr.asTypedList(yPlane.length).setAll(0, yPlane);
       uPtr.asTypedList(uPlane.length).setAll(0, uPlane);
       vPtr.asTypedList(vPlane.length).setAll(0, vPlane);
 
-      pngPtr = _bindings.convert_yuv420_to_png(
+      jpegPtr = _bindings.convert_yuv420_to_jpeg(
         yPtr,
         uPtr,
         vPtr,
@@ -69,28 +69,28 @@ class ImageKitFfi {
         uPixStride,
         vPixStride,
         rotationDegrees,
+        quality,
         outSizePtr,
       );
 
-      final pngSize = outSizePtr.value;
-      if (pngPtr == nullptr || pngSize <= 0) {
-        throw Exception('YUV420 -> PNG conversion failed');
+      final jpegSize = outSizePtr.value;
+      if (jpegPtr == nullptr || jpegSize <= 0) {
+        throw Exception('YUV420 -> JPEG conversion failed');
       }
 
-      return Uint8List.fromList(pngPtr.asTypedList(pngSize));
+      return Uint8List.fromList(jpegPtr.asTypedList(jpegSize));
     } finally {
       malloc.free(yPtr);
       malloc.free(uPtr);
       malloc.free(vPtr);
       malloc.free(outSizePtr);
-      if (pngPtr != nullptr) {
-        _bindings.free_buffer(pngPtr);
+      if (jpegPtr != nullptr) {
+        _bindings.free_buffer(jpegPtr);
       }
     }
   }
 
-  /// Конвертация NV21 -> PNG с поворотом
-  Uint8List convertNv21ToPngBuffer({
+  Uint8List convertNv21ToJpegBuffer({
     required Uint8List yPlane,
     required Uint8List uvPlane,
     required int width,
@@ -99,17 +99,18 @@ class ImageKitFfi {
     required int uvStride,
     int uvPixStride = 2,
     int rotationDegrees = 0,
+    int quality = 90,
   }) {
     final yPtr = malloc<Uint8>(yPlane.length);
     final uvPtr = malloc<Uint8>(uvPlane.length);
     final outSizePtr = malloc<Size>();
-    Pointer<Uint8> pngPtr = nullptr;
+    Pointer<Uint8> jpegPtr = nullptr;
 
     try {
       yPtr.asTypedList(yPlane.length).setAll(0, yPlane);
       uvPtr.asTypedList(uvPlane.length).setAll(0, uvPlane);
 
-      pngPtr = _bindings.convert_nv21_to_png(
+      jpegPtr = _bindings.convert_nv21_to_jpeg(
         yPtr,
         uvPtr,
         width,
@@ -118,21 +119,58 @@ class ImageKitFfi {
         uvStride,
         uvPixStride,
         rotationDegrees,
+        quality,
         outSizePtr,
       );
 
-      final pngSize = outSizePtr.value;
-      if (pngPtr == nullptr || pngSize <= 0) {
-        throw Exception('NV21 -> PNG conversion failed');
+      final jpegSize = outSizePtr.value;
+      if (jpegPtr == nullptr || jpegSize <= 0) {
+        throw Exception('NV21 -> JPEG conversion failed');
       }
 
-      return Uint8List.fromList(pngPtr.asTypedList(pngSize));
+      return Uint8List.fromList(jpegPtr.asTypedList(jpegSize));
     } finally {
       malloc.free(yPtr);
       malloc.free(uvPtr);
       malloc.free(outSizePtr);
-      if (pngPtr != nullptr) {
-        _bindings.free_buffer(pngPtr);
+      if (jpegPtr != nullptr) {
+        _bindings.free_buffer(jpegPtr);
+      }
+    }
+  }
+
+  Uint8List encodeRgbaToJpegBuffer({
+    required Uint8List rgbaBytes,
+    required int width,
+    required int height,
+    int quality = 90,
+  }) {
+    final rgbaPtr = malloc<Uint8>(rgbaBytes.length);
+    final outSizePtr = malloc<Size>();
+    Pointer<Uint8> jpegPtr = nullptr;
+
+    try {
+      rgbaPtr.asTypedList(rgbaBytes.length).setAll(0, rgbaBytes);
+
+      jpegPtr = _bindings.encode_rgba_to_jpeg_buffer(
+        rgbaPtr,
+        width,
+        height,
+        quality,
+        outSizePtr,
+      );
+
+      final jpegSize = outSizePtr.value;
+      if (jpegPtr == nullptr || jpegSize <= 0) {
+        throw Exception('RGBA -> JPEG conversion failed');
+      }
+
+      return Uint8List.fromList(jpegPtr.asTypedList(jpegSize));
+    } finally {
+      malloc.free(rgbaPtr);
+      malloc.free(outSizePtr);
+      if (jpegPtr != nullptr) {
+        _bindings.free_buffer(jpegPtr);
       }
     }
   }
@@ -168,6 +206,75 @@ class ImageKitFfi {
       return Uint8List.fromList(rotatedPtr.asTypedList(outputLength));
     } finally {
       malloc.free(rgbaPtr);
+      if (rotatedPtr != nullptr) {
+        _bindings.free_buffer(rotatedPtr);
+      }
+    }
+  }
+
+  Uint8List encodeBgraToJpegBuffer({
+    required Uint8List bgraBytes,
+    required int width,
+    required int height,
+    int quality = 90,
+  }) {
+    final bgraPtr = malloc<Uint8>(bgraBytes.length);
+    final outSizePtr = malloc<Size>();
+    Pointer<Uint8> jpegPtr = nullptr;
+
+    try {
+      bgraPtr.asTypedList(bgraBytes.length).setAll(0, bgraBytes);
+
+      jpegPtr = _bindings.encode_bgra_to_jpeg_buffer(
+        bgraPtr,
+        width,
+        height,
+        quality,
+        outSizePtr,
+      );
+
+      final jpegSize = outSizePtr.value;
+      if (jpegPtr == nullptr || jpegSize <= 0) {
+        throw Exception('BGRA -> JPEG conversion failed');
+      }
+
+      return Uint8List.fromList(jpegPtr.asTypedList(jpegSize));
+    } finally {
+      malloc.free(bgraPtr);
+      malloc.free(outSizePtr);
+      if (jpegPtr != nullptr) {
+        _bindings.free_buffer(jpegPtr);
+      }
+    }
+  }
+
+  Uint8List rotateJpegBuffer({
+    required Uint8List jpegBytes,
+    required int rotationDegrees,
+  }) {
+    final jpegPtr = malloc<Uint8>(jpegBytes.length);
+    final outSizePtr = malloc<Size>();
+    Pointer<Uint8> rotatedPtr = nullptr;
+
+    try {
+      jpegPtr.asTypedList(jpegBytes.length).setAll(0, jpegBytes);
+
+      rotatedPtr = _bindings.rotate_jpeg_buffer(
+        jpegPtr,
+        jpegBytes.length,
+        rotationDegrees,
+        outSizePtr,
+      );
+
+      final outSize = outSizePtr.value;
+      if (rotatedPtr == nullptr || outSize <= 0) {
+        throw Exception('JPEG rotation failed');
+      }
+
+      return Uint8List.fromList(rotatedPtr.asTypedList(outSize));
+    } finally {
+      malloc.free(jpegPtr);
+      malloc.free(outSizePtr);
       if (rotatedPtr != nullptr) {
         _bindings.free_buffer(rotatedPtr);
       }

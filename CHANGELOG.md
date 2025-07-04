@@ -1,3 +1,7 @@
+## 0.0.4
+
+* use jpg instead png
+
 ## 0.0.3
 
 * added rotation

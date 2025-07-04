@@ -34,7 +34,11 @@ class _CameraAppState extends State<CameraApp> {
   @override
   void initState() {
     super.initState();
-    controller = CameraController(_cameras[0], ResolutionPreset.max);
+    controller = CameraController(
+      _cameras[0],
+      ResolutionPreset.max,
+      imageFormatGroup: ImageFormatGroup.bgra8888,
+    );
     controller.initialize().then((_) {
       if (!mounted) {
         return;
@@ -81,7 +85,7 @@ class _CameraAppState extends State<CameraApp> {
       final vPixStride = image.planes[2].bytesPerPixel ?? 1;
       Stopwatch stopwatch = Stopwatch()..start();
       if (Platform.isAndroid) {
-        memoryImage = ImageKitFfi().convertYuv420ToPngBuffer(
+        memoryImage = ImageKitFfi().convertYuv420ToJpegBuffer(
           yPlane: yPlane,
           uPlane: uPlane,
           vPlane: vPlane,
@@ -94,10 +98,10 @@ class _CameraAppState extends State<CameraApp> {
           vPixStride: vPixStride,
         );
       } else {
-        memoryImage = ImageKitFfi().convertBgraToPngBuffer(
-          yPlane,
-          width,
-          height,
+        memoryImage = ImageKitFfi().encodeBgraToJpegBuffer(
+          bgraBytes: yPlane,
+          width: width,
+          height: height,
         );
       }
 

@@ -7,14 +7,69 @@ import 'dart:ffi' as ffi;
 /// Bindings for imagekit_ffi
 class ImagekitFfiBindings {
   /// Holds the symbol lookup function.
-  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) _lookup;
+  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
+      _lookup;
 
   /// The symbols are looked up in [dynamicLibrary].
-  ImagekitFfiBindings(ffi.DynamicLibrary dynamicLibrary) : _lookup = dynamicLibrary.lookup;
+  ImagekitFfiBindings(ffi.DynamicLibrary dynamicLibrary)
+      : _lookup = dynamicLibrary.lookup;
 
   /// The symbols are looked up with [lookup].
-  ImagekitFfiBindings.fromLookup(ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup)
+  ImagekitFfiBindings.fromLookup(
+      ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
+          lookup)
       : _lookup = lookup;
+
+  ffi.Pointer<ffi.Uint8> encode_bgra_to_jpeg_buffer(
+    ffi.Pointer<ffi.Uint8> bgra,
+    int width,
+    int height,
+    int quality,
+    ffi.Pointer<ffi.Size> out_size,
+  ) {
+    return _encode_bgra_to_jpeg_buffer(
+      bgra,
+      width,
+      height,
+      quality,
+      out_size,
+    );
+  }
+
+  late final _encode_bgra_to_jpeg_bufferPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint8> Function(
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Pointer<ffi.Size>)>>('encode_bgra_to_jpeg_buffer');
+  late final _encode_bgra_to_jpeg_buffer =
+      _encode_bgra_to_jpeg_bufferPtr.asFunction<
+          ffi.Pointer<ffi.Uint8> Function(
+              ffi.Pointer<ffi.Uint8>, int, int, int, ffi.Pointer<ffi.Size>)>();
+
+  ffi.Pointer<ffi.Uint8> rotate_jpeg_buffer(
+    ffi.Pointer<ffi.Uint8> jpeg_data,
+    int jpeg_size,
+    int rotationDegrees,
+    ffi.Pointer<ffi.Size> out_size,
+  ) {
+    return _rotate_jpeg_buffer(
+      jpeg_data,
+      jpeg_size,
+      rotationDegrees,
+      out_size,
+    );
+  }
+
+  late final _rotate_jpeg_bufferPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Size,
+              ffi.Int, ffi.Pointer<ffi.Size>)>>('rotate_jpeg_buffer');
+  late final _rotate_jpeg_buffer = _rotate_jpeg_bufferPtr.asFunction<
+      ffi.Pointer<ffi.Uint8> Function(
+          ffi.Pointer<ffi.Uint8>, int, int, ffi.Pointer<ffi.Size>)>();
 
   void free_buffer(
     ffi.Pointer<ffi.Uint8> buffer,
@@ -24,8 +79,11 @@ class ImagekitFfiBindings {
     );
   }
 
-  late final _free_bufferPtr = _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>>('free_buffer');
-  late final _free_buffer = _free_bufferPtr.asFunction<void Function(ffi.Pointer<ffi.Uint8>)>();
+  late final _free_bufferPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>>(
+          'free_buffer');
+  late final _free_buffer =
+      _free_bufferPtr.asFunction<void Function(ffi.Pointer<ffi.Uint8>)>();
 
   ffi.Pointer<ffi.Uint8> rotate_rgba_image(
     ffi.Pointer<ffi.Uint8> rgba,
@@ -41,11 +99,12 @@ class ImagekitFfiBindings {
     );
   }
 
-  late final _rotate_rgba_imagePtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Int)>>(
-          'rotate_rgba_image');
-  late final _rotate_rgba_image =
-      _rotate_rgba_imagePtr.asFunction<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int, int, int)>();
+  late final _rotate_rgba_imagePtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Int,
+              ffi.Int, ffi.Int)>>('rotate_rgba_image');
+  late final _rotate_rgba_image = _rotate_rgba_imagePtr.asFunction<
+      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int, int, int)>();
 
   ffi.Pointer<ffi.Uint8> convert_yuv420_to_rgba(
     ffi.Pointer<ffi.Uint8> y_plane,
@@ -77,11 +136,31 @@ class ImagekitFfiBindings {
 
   late final _convert_yuv420_to_rgbaPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>,
-              ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int, ffi.Int)>>('convert_yuv420_to_rgba');
+          ffi.Pointer<ffi.Uint8> Function(
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int)>>('convert_yuv420_to_rgba');
   late final _convert_yuv420_to_rgba = _convert_yuv420_to_rgbaPtr.asFunction<
-      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int,
-          int, int, int, int, int, int)>();
+      ffi.Pointer<ffi.Uint8> Function(
+          ffi.Pointer<ffi.Uint8>,
+          ffi.Pointer<ffi.Uint8>,
+          ffi.Pointer<ffi.Uint8>,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int)>();
 
   ffi.Pointer<ffi.Uint8> convert_nv21_to_rgba(
     ffi.Pointer<ffi.Uint8> y_plane,
@@ -107,33 +186,49 @@ class ImagekitFfiBindings {
 
   late final _convert_nv21_to_rgbaPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Int,
-              ffi.Int, ffi.Int, ffi.Int)>>('convert_nv21_to_rgba');
+          ffi.Pointer<ffi.Uint8> Function(
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int)>>('convert_nv21_to_rgba');
   late final _convert_nv21_to_rgba = _convert_nv21_to_rgbaPtr.asFunction<
-      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int, int, int, int, int)>();
+      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>,
+          ffi.Pointer<ffi.Uint8>, int, int, int, int, int, int)>();
 
-  ffi.Pointer<ffi.Uint8> encode_rgba_to_png_buffer(
+  ffi.Pointer<ffi.Uint8> encode_rgba_to_jpeg_buffer(
     ffi.Pointer<ffi.Uint8> rgba,
     int width,
     int height,
+    int quality,
     ffi.Pointer<ffi.Size> out_size,
   ) {
-    return _encode_rgba_to_png_buffer(
+    return _encode_rgba_to_jpeg_buffer(
       rgba,
       width,
       height,
+      quality,
       out_size,
     );
   }
 
-  late final _encode_rgba_to_png_bufferPtr = _lookup<
+  late final _encode_rgba_to_jpeg_bufferPtr = _lookup<
       ffi.NativeFunction<
           ffi.Pointer<ffi.Uint8> Function(
-              ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Pointer<ffi.Size>)>>('encode_rgba_to_png_buffer');
-  late final _encode_rgba_to_png_buffer = _encode_rgba_to_png_bufferPtr
-      .asFunction<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, int, int, ffi.Pointer<ffi.Size>)>();
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Pointer<ffi.Size>)>>('encode_rgba_to_jpeg_buffer');
+  late final _encode_rgba_to_jpeg_buffer =
+      _encode_rgba_to_jpeg_bufferPtr.asFunction<
+          ffi.Pointer<ffi.Uint8> Function(
+              ffi.Pointer<ffi.Uint8>, int, int, int, ffi.Pointer<ffi.Size>)>();
 
-  ffi.Pointer<ffi.Uint8> convert_yuv420_to_png(
+  ffi.Pointer<ffi.Uint8> convert_yuv420_to_jpeg(
     ffi.Pointer<ffi.Uint8> y_plane,
     ffi.Pointer<ffi.Uint8> u_plane,
     ffi.Pointer<ffi.Uint8> v_plane,
@@ -145,9 +240,10 @@ class ImagekitFfiBindings {
     int u_pix_stride,
     int v_pix_stride,
     int rotationDegrees,
+    int quality,
     ffi.Pointer<ffi.Size> out_size,
   ) {
-    return _convert_yuv420_to_png(
+    return _convert_yuv420_to_jpeg(
       y_plane,
       u_plane,
       v_plane,
@@ -159,11 +255,12 @@ class ImagekitFfiBindings {
       u_pix_stride,
       v_pix_stride,
       rotationDegrees,
+      quality,
       out_size,
     );
   }
 
-  late final _convert_yuv420_to_pngPtr = _lookup<
+  late final _convert_yuv420_to_jpegPtr = _lookup<
       ffi.NativeFunction<
           ffi.Pointer<ffi.Uint8> Function(
               ffi.Pointer<ffi.Uint8>,
@@ -177,12 +274,25 @@ class ImagekitFfiBindings {
               ffi.Int,
               ffi.Int,
               ffi.Int,
-              ffi.Pointer<ffi.Size>)>>('convert_yuv420_to_png');
-  late final _convert_yuv420_to_png = _convert_yuv420_to_pngPtr.asFunction<
-      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int,
-          int, int, int, int, int, int, ffi.Pointer<ffi.Size>)>();
+              ffi.Int,
+              ffi.Pointer<ffi.Size>)>>('convert_yuv420_to_jpeg');
+  late final _convert_yuv420_to_jpeg = _convert_yuv420_to_jpegPtr.asFunction<
+      ffi.Pointer<ffi.Uint8> Function(
+          ffi.Pointer<ffi.Uint8>,
+          ffi.Pointer<ffi.Uint8>,
+          ffi.Pointer<ffi.Uint8>,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          ffi.Pointer<ffi.Size>)>();
 
-  ffi.Pointer<ffi.Uint8> convert_nv21_to_png(
+  ffi.Pointer<ffi.Uint8> convert_nv21_to_jpeg(
     ffi.Pointer<ffi.Uint8> y_plane,
     ffi.Pointer<ffi.Uint8> uv_plane,
     int width,
@@ -191,9 +301,10 @@ class ImagekitFfiBindings {
     int uv_stride,
     int uv_pix_stride,
     int rotationDegrees,
+    int quality,
     ffi.Pointer<ffi.Size> out_size,
   ) {
-    return _convert_nv21_to_png(
+    return _convert_nv21_to_jpeg(
       y_plane,
       uv_plane,
       width,
@@ -202,18 +313,193 @@ class ImagekitFfiBindings {
       uv_stride,
       uv_pix_stride,
       rotationDegrees,
+      quality,
       out_size,
     );
   }
 
-  late final _convert_nv21_to_pngPtr = _lookup<
+  late final _convert_nv21_to_jpegPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, ffi.Int, ffi.Int, ffi.Int,
-              ffi.Int, ffi.Int, ffi.Int, ffi.Pointer<ffi.Size>)>>('convert_nv21_to_png');
-  late final _convert_nv21_to_png = _convert_nv21_to_pngPtr.asFunction<
+          ffi.Pointer<ffi.Uint8> Function(
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Pointer<ffi.Uint8>,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Int,
+              ffi.Pointer<ffi.Size>)>>('convert_nv21_to_jpeg');
+  late final _convert_nv21_to_jpeg = _convert_nv21_to_jpegPtr.asFunction<
       ffi.Pointer<ffi.Uint8> Function(
-          ffi.Pointer<ffi.Uint8>, ffi.Pointer<ffi.Uint8>, int, int, int, int, int, int, ffi.Pointer<ffi.Size>)>();
+          ffi.Pointer<ffi.Uint8>,
+          ffi.Pointer<ffi.Uint8>,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          int,
+          ffi.Pointer<ffi.Size>)>();
 }
+
+final class __mbstate_t extends ffi.Union {
+  @ffi.Array.multi([128])
+  external ffi.Array<ffi.Char> __mbstate8;
+
+  @ffi.LongLong()
+  external int _mbstateL;
+}
+
+final class __darwin_pthread_handler_rec extends ffi.Struct {
+  external ffi
+      .Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>
+      __routine;
+
+  external ffi.Pointer<ffi.Void> __arg;
+
+  external ffi.Pointer<__darwin_pthread_handler_rec> __next;
+}
+
+final class _opaque_pthread_attr_t extends ffi.Struct {
+  @ffi.Long()
+  external int __sig;
+
+  @ffi.Array.multi([56])
+  external ffi.Array<ffi.Char> __opaque;
+}
+
+final class _opaque_pthread_cond_t extends ffi.Struct {
+  @ffi.Long()
+  external int __sig;
+
+  @ffi.Array.multi([40])
+  external ffi.Array<ffi.Char> __opaque;
+}
+
+final class _opaque_pthread_condattr_t extends ffi.Struct {
+  @ffi.Long()
+  external int __sig;
+
+  @ffi.Array.multi([8])
+  external ffi.Array<ffi.Char> __opaque;
+}
+
+final class _opaque_pthread_mutex_t extends ffi.Struct {
+  @ffi.Long()
+  external int __sig;
+
+  @ffi.Array.multi([56])
+  external ffi.Array<ffi.Char> __opaque;
+}
+
+final class _opaque_pthread_mutexattr_t extends ffi.Struct {
+  @ffi.Long()
+  external int __sig;
+
+  @ffi.Array.multi([8])
+  external ffi.Array<ffi.Char> __opaque;
+}
+
+final class _opaque_pthread_once_t extends ffi.Struct {
+  @ffi.Long()
+  external int __sig;
+
+  @ffi.Array.multi([8])
+  external ffi.Array<ffi.Char> __opaque;
+}
+
+final class _opaque_pthread_rwlock_t extends ffi.Struct {
+  @ffi.Long()
+  external int __sig;
+
+  @ffi.Array.multi([192])
+  external ffi.Array<ffi.Char> __opaque;
+}
+
+final class _opaque_pthread_rwlockattr_t extends ffi.Struct {
+  @ffi.Long()
+  external int __sig;
+
+  @ffi.Array.multi([16])
+  external ffi.Array<ffi.Char> __opaque;
+}
+
+final class _opaque_pthread_t extends ffi.Struct {
+  @ffi.Long()
+  external int __sig;
+
+  external ffi.Pointer<__darwin_pthread_handler_rec> __cleanup_stack;
+
+  @ffi.Array.multi([8176])
+  external ffi.Array<ffi.Char> __opaque;
+}
+
+const int __WORDSIZE = 64;
+
+const int __has_safe_buffers = 1;
+
+const int __DARWIN_ONLY_64_BIT_INO_T = 1;
+
+const int __DARWIN_ONLY_UNIX_CONFORMANCE = 1;
+
+const int __DARWIN_ONLY_VERS_1050 = 1;
+
+const int __DARWIN_UNIX03 = 1;
+
+const int __DARWIN_64_BIT_INO_T = 1;
+
+const int __DARWIN_VERS_1050 = 1;
+
+const int __DARWIN_NON_CANCELABLE = 0;
+
+const String __DARWIN_SUF_EXTSN = '\$DARWIN_EXTSN';
+
+const int __DARWIN_C_ANSI = 4096;
+
+const int __DARWIN_C_FULL = 900000;
+
+const int __DARWIN_C_LEVEL = 900000;
+
+const int __STDC_WANT_LIB_EXT1__ = 1;
+
+const int __DARWIN_NO_LONG_LONG = 0;
+
+const int _DARWIN_FEATURE_64_BIT_INODE = 1;
+
+const int _DARWIN_FEATURE_ONLY_64_BIT_INODE = 1;
+
+const int _DARWIN_FEATURE_ONLY_VERS_1050 = 1;
+
+const int _DARWIN_FEATURE_ONLY_UNIX_CONFORMANCE = 1;
+
+const int _DARWIN_FEATURE_UNIX_CONFORMANCE = 3;
+
+const int __has_ptrcheck = 0;
+
+const int __has_bounds_safety_attributes = 0;
+
+const int __DARWIN_NULL = 0;
+
+const int __PTHREAD_SIZE__ = 8176;
+
+const int __PTHREAD_ATTR_SIZE__ = 56;
+
+const int __PTHREAD_MUTEXATTR_SIZE__ = 8;
+
+const int __PTHREAD_MUTEX_SIZE__ = 56;
+
+const int __PTHREAD_CONDATTR_SIZE__ = 8;
+
+const int __PTHREAD_COND_SIZE__ = 40;
+
+const int __PTHREAD_ONCE_SIZE__ = 8;
+
+const int __PTHREAD_RWLOCK_SIZE__ = 192;
+
+const int __PTHREAD_RWLOCKATTR_SIZE__ = 16;
 
 const int INT8_MAX = 127;
 
