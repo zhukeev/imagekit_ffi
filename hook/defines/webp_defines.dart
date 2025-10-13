@@ -8,6 +8,7 @@ final class WebpDefines extends LibDefines {
     required super.version,
     required super.source,
     required super.defaultUrlBuilder,
+    required super.enabled,
     super.androidSdkRoot,
     super.androidNdkRoot,
     super.tarballUri,
@@ -60,6 +61,7 @@ final class WebpDefines extends LibDefines {
     final android = LibDefines.stringKeyMap(root['android']);
     final sdkRoot = (android['sdk_root'] as String?)?.trim();
     final ndkRoot = (android['ndk_root'] as String?)?.trim();
+    final enabled = (root['enabled'] as bool?) ?? true;
 
     return WebpDefines._(
       version: version,
@@ -69,6 +71,8 @@ final class WebpDefines extends LibDefines {
       tarballUri: tarballUri,
       defaultUrlBuilder: (input) =>
           'https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-$version.tar.gz',
+
+      enabled: enabled,
     );
   }
 }

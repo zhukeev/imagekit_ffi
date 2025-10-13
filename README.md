@@ -120,6 +120,104 @@ final jpg = tj.compressFromYuv420Planes(
 
 ---
 
+## Configure Native Builds (Enable/Disable & Sources)
+
+You can fully control **which codecs are included** and **where their third-party libraries come from** using **Native Assets hook user-defines** in your app’s `pubspec.yaml`.
+
+### Enable/disable codecs (slim builds)
+
+```yaml
+hooks:
+  user_defines:
+    imagekit_ffi:
+      # JPEG (libjpeg-turbo)
+      turbo_jpeg:
+        enable: true
+        version: "3.1.2"
+        # Shortcut for pinned download:
+        tarball_uri: "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.2/libjpeg-turbo-3.1.2.tar.gz"
+
+      # PNG (libpng)
+      png:
+        enable: true
+        # Or pick a source map (see below)
+
+      # WebP (libwebp + sharpyuv)
+      webp:
+        enable: true
+        # Or pick a source map (see below)
+```
+
+- Setting `enable: false` **excludes** that codec’s native binary from the build → smaller app.
+- Turn off PNG/WebP if you only need JPEG, etc.
+
+### Choosing library source: **download** / **vendored** / **system**
+
+Each library (`turbo_jpeg`, `png`, `webp`, and optional `sharpyuv`) accepts a `source` map:
+
+- **Download (recommended for reproducible builds)**
+  ```yaml
+  hooks:
+    user_defines:
+      imagekit_ffi:
+        webp:
+          enable: true
+          source:
+            download:
+              url: "https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.4.0.tar.gz"
+  ```
+
+- **Vendored (use a local checkout in your repo)**
+  ```yaml
+  hooks:
+    user_defines:
+      imagekit_ffi:
+        png:
+          enable: true
+          source:
+            vendored:
+              path: third_party/libpng-1.6.43
+  ```
+
+- **System (use headers/libs preinstalled on the build machine)**
+  ```yaml
+  hooks:
+    user_defines:
+      imagekit_ffi:
+        png:
+          enable: true
+          source:
+            system: true
+  ```
+
+Internally, the plugin parses the `source` map as follows:
+
+- empty or `system: true` → **System**
+- `vendored.path` (required) → **Vendored**
+- `download.url` (required) → **Download**
+
+If you only need to bump **libjpeg-turbo** via fixed version + tarball (shortcut), the `version` + `tarball_uri` keys (shown above) are supported.
+
+#### Minimal JPEG-only example
+
+```yaml
+hooks:
+  user_defines:
+    imagekit_ffi:
+      turbo_jpeg:
+        enable: true
+        version: "3.1.2"
+        tarball_uri: "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.2/libjpeg-turbo-3.1.2.tar.gz"
+      png:
+        enable: false
+      webp:
+        enable: false
+```
+
+> **Note:** On some platforms `libsharpyuv` is separately linked; when building WebP, the plugin links it automatically if needed.
+
+---
+
 ## Platform Notes
 
 - **Android:** Native Assets place `.so` files automatically per ABI.  
@@ -130,99 +228,6 @@ final jpg = tj.compressFromYuv420Planes(
   If you vendor/build your own libwebp and see a runtime `pow` resolution error, ensure it’s linked with the C math library (`-lm`). The plugin’s default build wires this in for Android/Linux when needed.
 
 - **iOS/macOS:** Native Assets bundle the libraries; no extra steps. If you ever see a `*.dylib not found` error, clean the build and reinstall the app to refresh the Native Assets bundle.
-
----
-
-## Configure Library Sources (Versions, Vendoring, System)
-
-You can fully control where third-party libs come from using **Native Assets hook user-defines**.  
-Add this to your **app’s** `pubspec.yaml` (not the plugin):
-
-```yaml
-hooks:
-  user_defines:
-    imagekit_ffi:
-      turbo_jpeg:
-        # Simple pinned version + tarball (downloaded & built)
-        version: "3.1.2"
-        tarball_uri: "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.2/libjpeg-turbo-3.1.2.tar.gz"
-
-      libpng:
-        # Example: use a vendored source checkout under your app repo
-        source:
-          vendored:
-            path: third_party/libpng-1.6.43
-
-      webp:
-        # Example: prefer system installation (e.g., Linux distro pkg)
-        source:
-          system: true
-```
-
-### Supported `source` forms
-
-The plugin understands a `source` map for each library (e.g., `turbo_jpeg`, `libpng`, `webp`, `sharpyuv`):
-
-- **System:**  
-  ```yaml
-  source:
-    system: true
-  ```
-  Use headers/libs found on the build machine.
-
-- **Vendored (local path):**  
-  ```yaml
-  source:
-    vendored:
-      path: third_party/libpng-1.6.43
-  ```
-  Build from a directory in your repo (must contain the library source).
-
-- **Download (remote archive):**  
-  ```yaml
-  source:
-    download:
-      url: https://example.com/libwebp-1.4.0.tar.gz
-  ```
-  Fetch and build from a URL.
-
-> Internally, the plugin parses this map similar to:
-> - empty or `system: true` → System
-> - `vendored.path` (required) → Vendored
-> - `download.url` (required) → Download
-
-If you only need to bump **libjpeg-turbo** via fixed version + tarball (shortcut), the `version` + `tarball_uri` keys (shown above) are supported.
-
----
-
-## API Overview
-
-```dart
-abstract class ImageCodec {
-  String versionString();
-  Header getHeader(Uint8List bytes);
-  Uint8List decode(Uint8List bytes, {PixelFormat pixelFormat, int flags = 0});
-  Uint8List encode(Uint8List pixels, int width, int height,
-      {PixelFormat pixelFormat, Subsampling subsampling, int quality, int flags, int? pitchBytes});
-  // JPEG adds: transform/rotate/crop, YUV420 helpers
-}
-```
-
-- **TurboJpeg**: best-in-class speed; JPEG domain lossless ops.
-- **PngKit**: lossless PNG; supports typical interleaved/gray paths.
-- **WebpKit**: lossy/lossless WebP; supports near-lossless for 4:4:4.
-
----
-
-## Roadmap
-
-Planned additional formats (subject to licensing & portability review):
-
-- **AVIF** (libavif + aom/dav1d)
-- **HEIF/HEIC** (libheif; requires careful patent/licensing review)
-- **TIFF** (libtiff)
-- **GIF** (giflib)
-- **BMP** and simple PPM/PGM paths for utilities
 
 ---
 
@@ -243,7 +248,19 @@ Planned additional formats (subject to licensing & portability review):
 - Reuse pixel buffers across frames to reduce GC pressure.
 - Prefer JPEG YUV420 planar APIs for camera pipelines.
 - Tune JPEG `flags` (`fastDct`/`accurateDct`) to match your quality/speed needs.
-- For WebP, use `use_sharp_yuv` (enabled by default in the plugin) for better chroma quality.
+- For WebP, `use_sharp_yuv` is enabled in the plugin for better chroma quality.
+
+---
+
+## Roadmap
+
+Planned additional formats (subject to licensing & portability review):
+
+- **AVIF** (libavif + aom/dav1d)
+- **HEIF/HEIC** (libheif)
+- **TIFF** (libtiff)
+- **GIF** (giflib)
+- **BMP** and simple PPM/PGM paths for utilities
 
 ---
 

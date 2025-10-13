@@ -29,6 +29,7 @@ class LibDefines {
     required this.version,
     required this.source,
     required this.defaultUrlBuilder,
+    required this.enabled,
     this.androidSdkRoot,
     this.androidNdkRoot,
     this.tarballUri,
@@ -46,6 +47,9 @@ class LibDefines {
 
   /// Optional explicit tarball URI override from user_defines.
   final String? tarballUri;
+
+  /// Optional explicit enable/disable override from user_defines.
+  final bool enabled;
 
   /// Default URL builder used when no explicit url is provided.
   /// Signature: (version) => url

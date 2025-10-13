@@ -8,6 +8,7 @@ class PngDefines extends LibDefines {
     required super.version,
     required super.source,
     required super.defaultUrlBuilder,
+    required super.enabled,
     super.androidSdkRoot,
     super.androidNdkRoot,
     super.tarballUri,
@@ -37,6 +38,7 @@ class PngDefines extends LibDefines {
     final android = LibDefines.stringKeyMap(root['android']);
     final sdkRoot = (android['sdk_root'] as String?)?.trim();
     final ndkRoot = (android['ndk_root'] as String?)?.trim();
+    final enabled = (root['enabled'] as bool?) ?? true;
 
     return PngDefines._(
       version: version,
@@ -46,6 +48,7 @@ class PngDefines extends LibDefines {
       androidSdkRoot: (sdkRoot?.isEmpty ?? true) ? null : sdkRoot,
       androidNdkRoot: (ndkRoot?.isEmpty ?? true) ? null : ndkRoot,
       tarballUri: tarballUri,
+      enabled: enabled,
     );
   }
 }
