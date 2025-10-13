@@ -1,3 +1,11 @@
+## 0.0.5
+
+* **BREAKING CHANGE:** Major rewrite to use Flutter's Native Assets feature.
+* **BREAKING CHANGE:** Complete API overhaul. The plugin now exposes `ImageCodec` implementations for different formats.
+* **Feature:** Added support for PNG (`PngKit`) and WebP (`WebpKit`).
+* **Feature:** Added lossless transforms for JPEG (`rotate`, `flip`, `crop`).
+* **Improvement:** Simplified project structure and build process.
+
 ## 0.0.4
 
 * use jpg instead png

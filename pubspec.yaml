@@ -1,37 +1,22 @@
 name: imagekit_ffi
-description: A fast image conversion plugin with FFI.
-version: 0.0.4
+description: High-performance image codecs for Flutter/Dart via Native Assets + FFI.
+version: 0.0.5
 homepage: https://github.com/zhukeev/imagekit_ffi
-issue_tracker: https://github.com/zhukeev/spoiler_widget/issues
+issue_tracker: https://github.com/zhukeev/imagekit_ffi/issues
 
 environment:
-  sdk: ^3.5.0
-  flutter: ">=3.3.0"
+  sdk: ">=3.9.0 <4.0.0"
 
 dependencies:
-  flutter:
-    sdk: flutter
-  plugin_platform_interface: ^2.0.2
   ffi: ^2.1.0
+  logging: ^1.2.0
+  hooks: ^0.20.1
+  code_assets: ^0.19.7
+  archive: ^4.0.7
+  http: ^1.5.0
+  path: ^1.9.1
+  native_toolchain_c: ^0.17.1
 
 dev_dependencies:
-  ffigen: ^11.0.0
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^4.0.0
-
-ffigen:
-  output: lib/imagekit_ffi_bindings_generated.dart
-  name: ImagekitFfiBindings
-  description: Bindings for imagekit_ffi
-  headers:
-    entry-points:
-      - src/imagekit_ffi.h
-
-flutter:
-  plugin:
-    platforms:
-      android:
-        ffiPlugin: true
-      ios:
-        ffiPlugin: true
+  lints: ^5.0.0
+  test: ^1.24.0
