@@ -1,3 +1,7 @@
+## 0.0.6
+
+* FIX: File positions
+
 ## 0.0.5
 
 * **BREAKING CHANGE:** Major rewrite to use Flutter's Native Assets feature.
