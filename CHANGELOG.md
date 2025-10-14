@@ -1,6 +1,6 @@
 ## 0.0.6
 
-* FIX: File positions
+* REFACTOR: Moved build helpers to a dedicated 'helpers' directory for better project structure.
 
 ## 0.0.5
 
