@@ -1,6 +1,6 @@
 name: imagekit_ffi
 description: High-performance image codecs for Flutter/Dart via Native Assets + FFI.
-version: 0.0.5
+version: 0.0.6
 homepage: https://github.com/zhukeev/imagekit_ffi
 issue_tracker: https://github.com/zhukeev/imagekit_ffi/issues
 

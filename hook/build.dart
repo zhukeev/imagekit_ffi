@@ -1,9 +1,9 @@
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
 
-import 'builders/turbo_jpeg_build.dart';
-import 'builders/png_build.dart';
-import 'builders/webp_build.dart';
+import '../helpers/builders/turbo_jpeg_build.dart';
+import '../helpers/builders/png_build.dart';
+import '../helpers/builders/webp_build.dart';
 
 Future<void> main(List<String> args) => build(args, (input, output) async {
   hierarchicalLoggingEnabled = true;

@@ -1,3 +1,7 @@
+## 0.0.6
+
+* REFACTOR: Moved build helpers to a dedicated 'helpers' directory for better project structure.
+
 ## 0.0.5
 
 * **BREAKING CHANGE:** Major rewrite to use Flutter's Native Assets feature.
