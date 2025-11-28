@@ -9,6 +9,7 @@ final class WebpDefines extends LibDefines {
     required super.source,
     required super.defaultUrlBuilder,
     required super.enabled,
+    required super.skipPlatforms,
     super.androidSdkRoot,
     super.androidNdkRoot,
     super.tarballUri,
@@ -55,6 +56,8 @@ final class WebpDefines extends LibDefines {
     final ndkRoot = (android['ndk_root'] as String?)?.trim();
     final enabled = (root['enabled'] as bool?) ?? true;
 
+    final skipPlatforms = LibDefines.parseSkipPlatforms(root);
+
     return WebpDefines._(
       version: version,
       source: source,
@@ -65,6 +68,7 @@ final class WebpDefines extends LibDefines {
           'https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-$version.tar.gz',
 
       enabled: enabled,
+      skipPlatforms: skipPlatforms,
     );
   }
 }

@@ -9,6 +9,7 @@ class PngDefines extends LibDefines {
     required super.source,
     required super.defaultUrlBuilder,
     required super.enabled,
+    required super.skipPlatforms,
     super.androidSdkRoot,
     super.androidNdkRoot,
     super.tarballUri,
@@ -33,6 +34,8 @@ class PngDefines extends LibDefines {
     final ndkRoot = (android['ndk_root'] as String?)?.trim();
     final enabled = (root['enabled'] as bool?) ?? true;
 
+    final skipPlatforms = LibDefines.parseSkipPlatforms(root);
+
     return PngDefines._(
       version: version,
       source: source,
@@ -41,6 +44,7 @@ class PngDefines extends LibDefines {
       androidNdkRoot: (ndkRoot?.isEmpty ?? true) ? null : ndkRoot,
       tarballUri: tarballUri,
       enabled: enabled,
+      skipPlatforms: skipPlatforms,
     );
   }
 }

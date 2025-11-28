@@ -9,7 +9,7 @@ class TJDefines extends LibDefines {
     required super.source,
     required super.defaultUrlBuilder,
     required super.enabled,
-    required super.skipPlatforms, // ← NEW
+    required super.skipPlatforms,
     super.androidSdkRoot,
     super.androidNdkRoot,
     super.tarballUri,
@@ -38,7 +38,6 @@ class TJDefines extends LibDefines {
 
     final enabled = (root['enabled'] as bool?) ?? true;
 
-    // NEW: Parse skip_platform (string or list)
     final skipPlatforms = LibDefines.parseSkipPlatforms(root);
 
     return TJDefines._(

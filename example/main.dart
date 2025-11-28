@@ -6,7 +6,7 @@ void main() {
   _testCodec(TurboJpeg(), 'example/sample.jpg');
   _testCodec(PngKit(), 'example/image.png');
   _testCodec(WebpKit(), 'example/1.webp');
- 
+
   convertCodec(PngKit(), TurboJpeg(), 'example/image.png');
 }
 
@@ -57,9 +57,7 @@ void convertCodec(
 
   // 4) Имя файла: меняем расширение на целевое
   final filename = path.split('/').last;
-  final stem = filename.contains('.')
-      ? filename.substring(0, filename.lastIndexOf('.'))
-      : filename;
+  final stem = filename.contains('.') ? filename.substring(0, filename.lastIndexOf('.')) : filename;
   final targetExt = _extForCodec(toCodec); // ".jpg" / ".png" / ".webp"
   final newPath = path.replaceAll(filename, '$stem.converted$targetExt');
 

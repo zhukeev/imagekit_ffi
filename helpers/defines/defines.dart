@@ -73,9 +73,6 @@ class LibDefines {
   };
 
   bool isEnabledForOs(OS targetOs) {
-    print('LibDefines.isEnabledForOs($targetOs)');
-    print('LibDefines.isEnabledForOs: enabled = $enabled');
-    print('LibDefines.isEnabledForOs: skipPlatforms = $skipPlatforms');
     if (!enabled) return false;
     final key = _targetOsKey(targetOs);
     if (skipPlatforms.contains(key)) return false;
