@@ -7,10 +7,7 @@ import 'dart:io' as io;
 import 'package:path/path.dart' as p;
 
 /// Load native module built by hooks, e.g. module='webp' => libimagekit_ffi_webp.{dylib|so|dll}
-ffi.DynamicLibrary loadImageKitLib(
-  String module, {
-  String package = 'imagekit_ffi',
-}) {
+ffi.DynamicLibrary loadImageKitLib(String module, {String package = 'imagekit_ffi'}) {
   final base = '${package}_$module';
 
   final file = _platName(base);
@@ -35,14 +32,7 @@ ffi.DynamicLibrary loadImageKitLib(
 
   // .dart_tool/hooks_runner/shared/<pkg>/build/**/<file>
   for (final r in roots) {
-    final shared = p.join(
-      r,
-      '.dart_tool',
-      'hooks_runner',
-      'shared',
-      package,
-      'build',
-    );
+    final shared = p.join(r, '.dart_tool', 'hooks_runner', 'shared', package, 'build');
     final d = io.Directory(shared);
     if (d.existsSync()) {
       for (final ent in d.listSync(recursive: true, followLinks: false)) {
@@ -109,23 +99,19 @@ Iterable<String> _probeRoots() sync* {
 }
 
 mixin FfiHelpers on ImageCodec {
-  ffi.Pointer<ffi.Uint8> allocBuf([int? cap]) =>
-      cstr.calloc<ffi.Uint8>(cap ?? errCap);
+  ffi.Pointer<ffi.Uint8> allocBuf([int? cap]) => cstr.calloc<ffi.Uint8>(cap ?? errCap);
 
   ffi.Pointer<ffi.Uint8> copyToNative(Uint8List data, {int? len}) {
     final n = len ?? data.length;
     if (n > data.length) {
-      throw ArgumentError(
-        'Requested length $n exceeds source length ${data.length}',
-      );
+      throw ArgumentError('Requested length $n exceeds source length ${data.length}');
     }
     final p = cstr.calloc<ffi.Uint8>(n);
     p.asTypedList(n).setRange(0, n, data);
     return p;
   }
 
-  String readCString(ffi.Pointer<ffi.Uint8> p) =>
-      p.cast<cstr.Utf8>().toDartString();
+  String readCString(ffi.Pointer<ffi.Uint8> p) => p.cast<cstr.Utf8>().toDartString();
 
   void freeAll(Iterable<ffi.Pointer<ffi.NativeType>> ptrs) {
     for (final p in ptrs) {

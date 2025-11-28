@@ -151,6 +151,20 @@ hooks:
 - Setting `enable: false` **excludes** that codec’s native binary from the build → smaller app.
 - Turn off PNG/WebP if you only need JPEG, etc.
 
+### Skip specific platforms (`skip_platform`)
+
+Keep a codec enabled globally but skip building it on certain targets (currently wired for the `turbo_jpeg` block).
+Accepts a string or list with any of: `android`, `ios`, `macos`, `linux`, `windows`.
+
+```yaml
+hooks:
+  user_defines:
+    imagekit_ffi:
+      turbo_jpeg:
+        enable: true
+        skip_platform: [ios, macos] # e.g. rely on system JPEG on Apple, still build elsewhere
+```
+
 ### Choosing library source: **download** / **vendored** / **system**
 
 Each library (`turbo_jpeg`, `png`, `webp`, and optional `sharpyuv`) accepts a `source` map:

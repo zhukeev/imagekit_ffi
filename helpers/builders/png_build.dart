@@ -10,9 +10,7 @@ import '../defines/png_defines.dart';
 const _logTag = 'libpng';
 
 final class PngBuild extends LibBuilder {
-  PngBuild(super.input, super.output)
-    : defines = PngDefines.fromHooks(input),
-      super(logTag: _logTag);
+  PngBuild(super.input, super.output) : defines = PngDefines.fromHooks(input), super(logTag: _logTag);
 
   final PngDefines defines;
 
@@ -23,35 +21,26 @@ final class PngBuild extends LibBuilder {
     logger.info('$_logTag: tarballUri ${defines.tarballUri}');
     logger.info('$_logTag: downloadUrl ${defines.downloadUrl}');
 
-    final ws = Directory(
-      p.join(input.packageRoot.path, '.dart_tool', 'native_build', 'libpng'),
-    )..createSync(recursive: true);
+    final ws = Directory(p.join(input.packageRoot.path, '.dart_tool', 'native_build', 'libpng'))
+      ..createSync(recursive: true);
 
     final srcDir = await _stageSources(ws);
 
     Map<String, String> built = {};
-    final extraDefs = <String>[
-      '-DPNG_SHARED=OFF',
-      '-DPNG_STATIC=ON',
-      '-DPNG_TESTS=OFF',
-    ];
+    final extraDefs = <String>['-DPNG_SHARED=OFF', '-DPNG_STATIC=ON', '-DPNG_TESTS=OFF'];
 
     switch (input.config.code.targetOS) {
       case OS.macOS:
-        built = await buildMacStatic(
-          srcDir: srcDir,
-          ws: ws,
-          versionTag: defines.version,
-          extraDefs: extraDefs,
-        );
+        built = await buildMacStatic(srcDir: srcDir, ws: ws, versionTag: defines.version, extraDefs: extraDefs);
+        break;
+      case OS.linux:
+        built = await buildLinuxStatic(srcDir: srcDir, ws: ws, versionTag: defines.version, extraDefs: extraDefs);
+        break;
+      case OS.windows:
+        built = await buildWindowsStatic(srcDir: srcDir, ws: ws, versionTag: defines.version, extraDefs: extraDefs);
         break;
       case OS.iOS:
-        built = await buildIOSStatic(
-          srcDir: srcDir,
-          ws: ws,
-          versionTag: defines.version,
-          extraDefs: extraDefs,
-        );
+        built = await buildIOSStatic(srcDir: srcDir, ws: ws, versionTag: defines.version, extraDefs: extraDefs);
         break;
       case OS.android:
         built = await buildAndroidStatic(
@@ -68,9 +57,7 @@ final class PngBuild extends LibBuilder {
     }
 
     final includePaths = <String>[built['include']!];
-    final localIncDir = Directory(
-      p.join(input.packageRoot.path, 'native', 'png'),
-    );
+    final localIncDir = Directory(p.join(input.packageRoot.path, 'native', 'png'));
     if (localIncDir.existsSync()) includePaths.add(localIncDir.path);
 
     final libraryDirs = <String>[built['lib']!];
@@ -91,8 +78,7 @@ final class PngBuild extends LibBuilder {
   }
 
   Future<String> _stageSources(Directory ws) async {
-    final srcRoot = Directory(p.join(ws.path, 'src'))
-      ..createSync(recursive: true);
+    final srcRoot = Directory(p.join(ws.path, 'src'))..createSync(recursive: true);
     final dst = Directory(p.join(srcRoot.path, 'libpng-${defines.version}'));
     if (dst.existsSync()) return dst.path;
 
@@ -107,17 +93,14 @@ final class PngBuild extends LibBuilder {
     }
 
     final url = Uri.parse(defines.downloadUrl);
-    final tmpTar = File(
-      p.join(ws.path, 'cache', 'libpng-${defines.version}.tar.gz'),
-    );
+    final tmpTar = File(p.join(ws.path, 'cache', 'libpng-${defines.version}.tar.gz'));
     await downloadTo(tmpTar, url);
     await extractTarGz(tmpTar, Directory(p.join(ws.path, 'src')));
 
     // Normalize extracted dirname
-    final extractedTop = Directory(srcRoot.path)
-        .listSync()
-        .whereType<Directory>()
-        .firstWhere((d) => p.basename(d.path).startsWith('libpng-'));
+    final extractedTop = Directory(
+      srcRoot.path,
+    ).listSync().whereType<Directory>().firstWhere((d) => p.basename(d.path).startsWith('libpng-'));
     if (extractedTop.path != dst.path) {
       await extractedTop.rename(dst.path);
     }

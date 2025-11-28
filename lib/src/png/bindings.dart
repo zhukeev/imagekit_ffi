@@ -3,9 +3,7 @@
 part of 'png_kit.dart';
 
 // version
-@ffi.Native<ffi.Int32 Function(ffi.Pointer<ffi.Uint8>, ffi.Int32)>(
-  symbol: 'ik_png_version_str',
-)
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<ffi.Uint8>, ffi.Int32)>(symbol: 'ik_png_version_str')
 external int _ik_png_version_str(ffi.Pointer<ffi.Uint8> out, int outLen);
 
 // info
@@ -121,8 +119,5 @@ external int _ik_png_encode_from_pixels_ex(
 );
 
 // free
-@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>(
-  symbol: 'ik_png_free',
-  isLeaf: true,
-)
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>(symbol: 'ik_png_free', isLeaf: true)
 external void _ik_png_free(ffi.Pointer<ffi.Uint8> p);

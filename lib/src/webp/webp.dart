@@ -63,11 +63,7 @@ final class WebpKit extends ImageCodec with FfiHelpers {
   }
 
   @override
-  Uint8List decode(
-    Uint8List bytes, {
-    PixelFormat pixelFormat = PixelFormat.rgba,
-    int flags = 0,
-  }) {
+  Uint8List decode(Uint8List bytes, {PixelFormat pixelFormat = PixelFormat.rgba, int flags = 0}) {
     final hdr = getHeader(bytes);
     final outLen = hdr.width * hdr.height * pixelFormat.bytesPerPixel;
 

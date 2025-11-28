@@ -9,6 +9,7 @@ class TJDefines extends LibDefines {
     required super.source,
     required super.defaultUrlBuilder,
     required super.enabled,
+    required super.skipPlatforms, // ← NEW
     super.androidSdkRoot,
     super.androidNdkRoot,
     super.tarballUri,
@@ -18,17 +19,13 @@ class TJDefines extends LibDefines {
     final root = LibDefines.resolveCodecBlock(input, 'turbo_jpeg');
 
     final verRaw = (root['version'] as String?)?.trim();
-    final version = (verRaw != null && verRaw.isNotEmpty)
-        ? verRaw
-        : _kDefaultTJVersion;
+    final version = (verRaw != null && verRaw.isNotEmpty) ? verRaw : _kDefaultTJVersion;
 
     final tarballUriRaw = (root['tarball_uri'] as String?)?.trim();
-    final tarballUri = (tarballUriRaw != null && tarballUriRaw.isNotEmpty)
-        ? tarballUriRaw
-        : null;
+    final tarballUri = (tarballUriRaw != null && tarballUriRaw.isNotEmpty) ? tarballUriRaw : null;
 
     final srcMap = LibDefines.stringKeyMap(root['source']);
-    LibSource source = srcMap.isNotEmpty
+    final source = srcMap.isNotEmpty
         ? LibDefines.parseSource(srcMap, ctxKey: 'turbo_jpeg')
         : LibSource.download(
             url:
@@ -38,7 +35,11 @@ class TJDefines extends LibDefines {
     final android = LibDefines.stringKeyMap(root['android']);
     final sdkRoot = (android['sdk_root'] as String?)?.trim();
     final ndkRoot = (android['ndk_root'] as String?)?.trim();
+
     final enabled = (root['enabled'] as bool?) ?? true;
+
+    // NEW: Parse skip_platform (string or list)
+    final skipPlatforms = LibDefines.parseSkipPlatforms(root);
 
     return TJDefines._(
       version: version,
@@ -49,6 +50,7 @@ class TJDefines extends LibDefines {
       androidNdkRoot: (ndkRoot?.isEmpty ?? true) ? null : ndkRoot,
       tarballUri: tarballUri,
       enabled: enabled,
+      skipPlatforms: skipPlatforms,
     );
   }
 }

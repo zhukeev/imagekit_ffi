@@ -18,14 +18,10 @@ final class WebpDefines extends LibDefines {
     final root = LibDefines.resolveCodecBlock(input, 'webp');
 
     final verRaw = (root['version'] as String?)?.trim();
-    final version = (verRaw == null || verRaw.isEmpty)
-        ? _kDefaultWebpVersion
-        : verRaw;
+    final version = (verRaw == null || verRaw.isEmpty) ? _kDefaultWebpVersion : verRaw;
 
     final tarballUriRaw = (root['tarball_uri'] as String?)?.trim();
-    final tarballUri = (tarballUriRaw != null && tarballUriRaw.isNotEmpty)
-        ? tarballUriRaw
-        : null;
+    final tarballUri = (tarballUriRaw != null && tarballUriRaw.isNotEmpty) ? tarballUriRaw : null;
 
     LibSource source = LibSource.download(
       url:
@@ -41,18 +37,14 @@ final class WebpDefines extends LibDefines {
         final vend = LibDefines.stringKeyMap(srcMap['vendored']);
         final path = (vend['path'] as String?)?.trim();
         if (path == null || path.isEmpty) {
-          throw StateError(
-            'user_defines.webp.source.vendored.path must be a directory.',
-          );
+          throw StateError('user_defines.webp.source.vendored.path must be a directory.');
         }
         source = LibSource.vendored(path: path);
       } else if (srcMap.containsKey('download')) {
         final dl = LibDefines.stringKeyMap(srcMap['download']);
         final url = (dl['url'] as String?)?.trim();
         if (url == null || url.isEmpty) {
-          throw StateError(
-            'user_defines.webp.source.download.url is required.',
-          );
+          throw StateError('user_defines.webp.source.download.url is required.');
         }
         source = LibSource.download(url: url);
       }
