@@ -1,3 +1,4 @@
+import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 
 /// Generic source descriptor shared by all libraries.
@@ -30,10 +31,11 @@ class LibDefines {
     required this.source,
     required this.defaultUrlBuilder,
     required this.enabled,
+    Set<String>? skipPlatforms,
     this.androidSdkRoot,
     this.androidNdkRoot,
     this.tarballUri,
-  });
+  }) : skipPlatforms = skipPlatforms ?? const {};
 
   /// Library version string (e.g. "3.1.2").
   final String version;
@@ -51,13 +53,15 @@ class LibDefines {
   /// Optional explicit enable/disable override from user_defines.
   final bool enabled;
 
+  /// Platforms where this lib should be skipped (android/ios/macos/linux/windows).
+  final Set<String> skipPlatforms;
+
   /// Default URL builder used when no explicit url is provided.
   /// Signature: (version) => url
   final String Function(String version) defaultUrlBuilder;
 
   /// Vendored path (if any).
-  String? get vendoredPath =>
-      source is _LibVendored ? (source as _LibVendored).path : null;
+  String? get vendoredPath => source is _LibVendored ? (source as _LibVendored).path : null;
 
   /// Whether to use system-provided library.
   bool get useSystem => source is _LibSystem;
@@ -67,6 +71,30 @@ class LibDefines {
     _LibDownload d => d.url,
     _ => tarballUri ?? defaultUrlBuilder(version),
   };
+
+  bool isEnabledForOs(OS targetOs) {
+    if (!enabled) return false;
+    final key = _targetOsKey(targetOs);
+    if (skipPlatforms.contains(key)) return false;
+    return true;
+  }
+
+  static String _targetOsKey(OS os) {
+    switch (os) {
+      case OS.android:
+        return 'android';
+      case OS.iOS:
+        return 'ios';
+      case OS.macOS:
+        return 'macos';
+      case OS.linux:
+        return 'linux';
+      case OS.windows:
+        return 'windows';
+      default:
+        return 'other';
+    }
+  }
 
   // ======== user_defines helpers (kept private to this module) ========
 
@@ -112,12 +140,7 @@ class LibDefines {
 
     final raw = _unwrapHookUserDefines(input.userDefines);
 
-    for (final key in [
-      input.packageName,
-      'turbo_jpeg',
-      'turbo_jpeg_native_assets',
-      'imagekit_ffi',
-    ]) {
+    for (final key in [input.packageName, 'turbo_jpeg', 'turbo_jpeg_native_assets', 'imagekit_ffi']) {
       final v = raw[key];
       if (v is Map) return stringKeyMap(v);
     }
@@ -126,10 +149,7 @@ class LibDefines {
 
   /// Return codec-scoped block: user_defines.<codecKey.
   /// codecKey is the Key under `user_defines` (e.g. "turbo_jpeg", "libpng").
-  static Map<String, dynamic> resolveCodecBlock(
-    BuildInput input,
-    String codecKey,
-  ) {
+  static Map<String, dynamic> resolveCodecBlock(BuildInput input, String codecKey) {
     final root = resolveDefinesRoot(input);
     final v = root[codecKey];
     if (v is Map) return stringKeyMap(v);
@@ -146,9 +166,7 @@ class LibDefines {
       final vend = stringKeyMap(srcMap['vendored']);
       final path = (vend['path'] as String?)?.trim();
       if (path == null || path.isEmpty) {
-        throw StateError(
-          'user_defines.$ctxKey.source.vendored.path must be a directory.',
-        );
+        throw StateError('user_defines.$ctxKey.source.vendored.path must be a directory.');
       }
       return LibSource.vendored(path: path);
     }
@@ -157,14 +175,29 @@ class LibDefines {
       final dl = stringKeyMap(srcMap['download']);
       final url = (dl['url'] as String?)?.trim();
       if (url == null || url.isEmpty) {
-        throw StateError(
-          'user_defines.$ctxKey.source.download.url is required.',
-        );
+        throw StateError('user_defines.$ctxKey.source.download.url is required.');
       }
       return LibSource.download(url: url);
     }
 
     // Default to system if structure is unknown.
     return const LibSource.system();
+  }
+
+  static Set<String> parseSkipPlatforms(Map<String, dynamic> codecBlock) {
+    final result = <String>{};
+    final raw = codecBlock['skip_platform'];
+
+    if (raw is String) {
+      final v = raw.trim().toLowerCase();
+      if (v.isNotEmpty) result.add(v);
+    } else if (raw is List) {
+      for (final item in raw) {
+        final v = item.toString().trim().toLowerCase();
+        if (v.isNotEmpty) result.add(v);
+      }
+    }
+
+    return result;
   }
 }

@@ -81,12 +81,7 @@ abstract class LibBuilder {
     if (r.exitCode != 0) {
       stderr.write(r.stdout);
       stderr.write(r.stderr);
-      throw ProcessException(
-        'cmake',
-        args,
-        "Exit code: '${r.exitCode}'. See logs above.",
-        r.exitCode,
-      );
+      throw ProcessException('cmake', args, "Exit code: '${r.exitCode}'. See logs above.", r.exitCode);
     }
     final out = (r.stdout ?? '').toString().trim();
     if (out.isNotEmpty) logger.info(out);
@@ -94,19 +89,9 @@ abstract class LibBuilder {
     if (err.isNotEmpty) logger.info(err);
   }
 
-  Future<String> runAndRead(
-    String exe,
-    List<String> args, {
-    String? cwd,
-    Map<String, String>? env,
-  }) async {
+  Future<String> runAndRead(String exe, List<String> args, {String? cwd, Map<String, String>? env}) async {
     logger.info('> $exe ${args.join(' ')}');
-    final r = await Process.run(
-      exe,
-      args,
-      workingDirectory: cwd,
-      environment: env,
-    );
+    final r = await Process.run(exe, args, workingDirectory: cwd, environment: env);
     if (r.exitCode != 0) {
       final msg = StringBuffer()
         ..writeln('Process failed: $exe ${args.join(' ')}')
@@ -122,21 +107,23 @@ abstract class LibBuilder {
     return '';
   }
 
-  /* --------------------------- Apple toolchains --------------------------- */
-
-  Future<Map<String, String>> buildMacStatic({
+  /* --------------------------- Windows toolchains --------------------------- */
+  Future<Map<String, String>> buildWindowsStatic({
     required String srcDir,
     required Directory ws,
     required String versionTag,
     List<String> extraDefs = const [],
   }) async {
-    final build = Directory(p.join(ws.path, 'build', 'macos-$versionTag'))
-      ..createSync(recursive: true);
-    final install = Directory(p.join(ws.path, 'install', 'macos-$versionTag'))
-      ..createSync(recursive: true);
-    final arch = input.config.code.targetArchitecture == Architecture.x64
-        ? 'x86_64'
-        : 'arm64';
+    final arch = switch (input.config.code.targetArchitecture) {
+      Architecture.x64 => 'x64',
+      Architecture.arm64 => 'ARM64',
+      Architecture.arm => 'ARM',
+      _ => 'x64',
+    };
+
+    final build = Directory(p.join(ws.path, 'build', 'windows-$arch-$versionTag'))..createSync(recursive: true);
+
+    final install = Directory(p.join(ws.path, 'install', 'windows-$arch-$versionTag'))..createSync(recursive: true);
 
     await cmake([
       '-S',
@@ -149,15 +136,88 @@ abstract class LibBuilder {
       '-DENABLE_SHARED=OFF',
       '-DENABLE_STATIC=ON',
       '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
+      '-DCMAKE_INSTALL_PREFIX=${install.path}',
+      '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
+      ...extraDefs,
+    ]);
+
+    await cmake(['--build', build.path, '--target', 'install', '--config', 'Release']);
+
+    return {'include': p.join(install.path, 'include'), 'lib': p.join(install.path, 'lib')};
+  }
+
+  /* --------------------------- Linux toolchains --------------------------- */
+  Future<Map<String, String>> buildLinuxStatic({
+    required String srcDir,
+    required Directory ws,
+    required String versionTag,
+    List<String> extraDefs = const [],
+  }) async {
+    final arch = switch (input.config.code.targetArchitecture) {
+      Architecture.x64 => 'x86_64',
+      Architecture.arm64 => 'aarch64',
+      Architecture.arm => 'armv7',
+      _ => 'x86_64',
+    };
+
+    final build = Directory(p.join(ws.path, 'build', 'linux-$arch-$versionTag'))..createSync(recursive: true);
+
+    final install = Directory(p.join(ws.path, 'install', 'linux-$arch-$versionTag'))..createSync(recursive: true);
+
+    await cmake([
+      '-S',
+      srcDir,
+      '-B',
+      build.path,
+      '-G',
+      'Ninja',
+      '-DCMAKE_BUILD_TYPE=Release',
+      '-DENABLE_SHARED=OFF',
+      '-DENABLE_STATIC=ON',
+      '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
+      '-DCMAKE_INSTALL_PREFIX=${install.path}',
+      '-DCMAKE_C_FLAGS=-fPIC',
+      '-DCMAKE_CXX_FLAGS=-fPIC',
+      ...extraDefs,
+    ]);
+
+    await cmake(['--build', build.path, '--target', 'install', '-j']);
+
+    return {'include': p.join(install.path, 'include'), 'lib': p.join(install.path, 'lib')};
+  }
+
+  /* --------------------------- Apple toolchains --------------------------- */
+
+  Future<Map<String, String>> buildMacStatic({
+    required String srcDir,
+    required Directory ws,
+    required String versionTag,
+    List<String> extraDefs = const [],
+  }) async {
+    final build = Directory(p.join(ws.path, 'build', 'macos-$versionTag'))..createSync(recursive: true);
+    final install = Directory(p.join(ws.path, 'install', 'macos-$versionTag'))..createSync(recursive: true);
+    final arch = input.config.code.targetArchitecture == Architecture.x64 ? 'x86_64' : 'arm64';
+
+    const minMacOs = '13.0';
+
+    await cmake([
+      '-S',
+      srcDir,
+      '-B',
+      build.path,
+      '-G',
+      'Ninja',
+      '-DCMAKE_BUILD_TYPE=Release',
+      '-DENABLE_SHARED=OFF',
+      '-DENABLE_STATIC=ON',
+      '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
+      '-DCMAKE_OSX_DEPLOYMENT_TARGET=$minMacOs',
       '-DCMAKE_OSX_ARCHITECTURES=$arch',
       '-DCMAKE_INSTALL_PREFIX=${install.path}',
       ...extraDefs,
     ]);
     await cmake(['--build', build.path, '--target', 'install', '-j']);
-    return {
-      'include': p.join(install.path, 'include'),
-      'lib': p.join(install.path, 'lib'),
-    };
+    return {'include': p.join(install.path, 'include'), 'lib': p.join(install.path, 'lib')};
     // (Note: some projects also install frameworks; link static .a for simplicity.)
   }
 
@@ -174,18 +234,12 @@ abstract class LibBuilder {
       Architecture.x64 => 'x86_64',
       _ => 'arm64',
     };
-    final sdkPath = await runAndRead('xcrun', [
-      '--sdk',
-      sdkType,
-      '--show-sdk-path',
-    ]);
+    final sdkPath = await runAndRead('xcrun', ['--sdk', sdkType, '--show-sdk-path']);
     final minOs = '${iosCfg.targetVersion}.0';
     final tag = '$sdkType-$arch-$versionTag';
 
-    final build = Directory(p.join(ws.path, 'build', 'ios-$tag'))
-      ..createSync(recursive: true);
-    final install = Directory(p.join(ws.path, 'install', 'ios-$tag'))
-      ..createSync(recursive: true);
+    final build = Directory(p.join(ws.path, 'build', 'ios-$tag'))..createSync(recursive: true);
+    final install = Directory(p.join(ws.path, 'install', 'ios-$tag'))..createSync(recursive: true);
 
     await cmake([
       '-S',
@@ -207,18 +261,8 @@ abstract class LibBuilder {
       '-DCMAKE_INSTALL_PREFIX=${install.path}',
       ...extraDefs,
     ]);
-    await cmake([
-      '--build',
-      build.path,
-      '--target',
-      'install',
-      '--config',
-      'Release',
-    ]);
-    return {
-      'include': p.join(install.path, 'include'),
-      'lib': p.join(install.path, 'lib'),
-    };
+    await cmake(['--build', build.path, '--target', 'install', '--config', 'Release']);
+    return {'include': p.join(install.path, 'include'), 'lib': p.join(install.path, 'lib')};
   }
 
   /* ---------------------------- Android toolchain --------------------------- */
@@ -232,13 +276,7 @@ abstract class LibBuilder {
     if (sdk != null) {
       final sideBySide = Directory(p.join(sdk, 'ndk'));
       if (sideBySide.existsSync()) {
-        final versions =
-            sideBySide
-                .listSync()
-                .whereType<Directory>()
-                .map((d) => d.path)
-                .toList()
-              ..sort();
+        final versions = sideBySide.listSync().whereType<Directory>().map((d) => d.path).toList()..sort();
         if (versions.isNotEmpty) return versions.last;
       }
     }
@@ -264,9 +302,7 @@ abstract class LibBuilder {
   }) async {
     print('buildAndroidStatic: input.config  ${input.config.json}');
 
-    final cc =
-        (input.json['config']
-            as Map?)?['extensions']?['code_assets']?['c_compiler'];
+    final cc = (input.json['config'] as Map?)?['extensions']?['code_assets']?['c_compiler'];
 
     final ccPath = (cc is Map) ? (cc['cc'] as String?) : null;
     final arPath = (cc is Map) ? (cc['ar'] as String?) : null;
@@ -294,10 +330,8 @@ abstract class LibBuilder {
     final abi = abiForAndroid(input.config.code.targetArchitecture);
     final api = 21;
     final tag = '$abi-$versionTag';
-    final build = Directory(p.join(ws.path, 'build', 'android-$tag'))
-      ..createSync(recursive: true);
-    final install = Directory(p.join(ws.path, 'install', 'android-$tag'))
-      ..createSync(recursive: true);
+    final build = Directory(p.join(ws.path, 'build', 'android-$tag'))..createSync(recursive: true);
+    final install = Directory(p.join(ws.path, 'install', 'android-$tag'))..createSync(recursive: true);
 
     await cmake([
       '-S',
@@ -319,10 +353,7 @@ abstract class LibBuilder {
     ]);
 
     await cmake(['--build', build.path, '--target', 'install', '-j']);
-    return {
-      'include': p.join(install.path, 'include'),
-      'lib': p.join(install.path, 'lib'),
-    };
+    return {'include': p.join(install.path, 'include'), 'lib': p.join(install.path, 'lib')};
   }
 }
 
@@ -375,17 +406,12 @@ String? _normDir(String? p) {
   return s.replaceAll(r'\\', '/');
 }
 
-String _versionKey(String v) =>
-    v.split('.').map((p) => p.padLeft(10, '0')).join('.');
+String _versionKey(String v) => v.split('.').map((p) => p.padLeft(10, '0')).join('.');
 
 String? _pickHighestNdkUnderSdk(String sdkRoot) {
   final ndkParent = Directory('$sdkRoot/ndk');
   if (!ndkParent.existsSync()) return null;
-  final dirs = ndkParent
-      .listSync()
-      .whereType<Directory>()
-      .map((d) => d.path.replaceAll('\\', '/'))
-      .toList();
+  final dirs = ndkParent.listSync().whereType<Directory>().map((d) => d.path.replaceAll('\\', '/')).toList();
   if (dirs.isEmpty) return null;
   dirs.sort((a, b) {
     final va = a.split('/').last;
@@ -414,16 +440,8 @@ AndroidPaths resolveAndroidPaths({
 
   // 1) env
   final env = Platform.environment;
-  ndkRoot ??= _normDir(
-    _firstNonEmpty([
-      env['ANDROID_NDK_HOME'],
-      env['ANDROID_NDK_ROOT'],
-      env['NDK_HOME'],
-    ]),
-  );
-  sdkRoot ??= _normDir(
-    _firstNonEmpty([env['ANDROID_SDK_ROOT'], env['ANDROID_HOME']]),
-  );
+  ndkRoot ??= _normDir(_firstNonEmpty([env['ANDROID_NDK_HOME'], env['ANDROID_NDK_ROOT'], env['NDK_HOME']]));
+  sdkRoot ??= _normDir(_firstNonEmpty([env['ANDROID_SDK_ROOT'], env['ANDROID_HOME']]));
 
   // 2) local.properties
   if (androidProjectDir != null && androidProjectDir.existsSync()) {
@@ -432,13 +450,8 @@ AndroidPaths resolveAndroidPaths({
       final props = _readProperties(lp);
       sdkRoot ??= _normDir(props['sdk.dir']);
       ndkRoot ??= _normDir(props['ndk.dir']);
-      final ndkVersion = _firstNonEmpty([
-        props['ndkVersion'],
-        props['ndk.version'],
-      ]);
-      if ((ndkRoot == null || ndkRoot.isEmpty) &&
-          sdkRoot != null &&
-          ndkVersion != null) {
+      final ndkVersion = _firstNonEmpty([props['ndkVersion'], props['ndk.version']]);
+      if ((ndkRoot == null || ndkRoot.isEmpty) && sdkRoot != null && ndkVersion != null) {
         final candidate = Directory('$sdkRoot/ndk/$ndkVersion');
         if (candidate.existsSync()) ndkRoot = candidate.path;
       }
@@ -446,10 +459,7 @@ AndroidPaths resolveAndroidPaths({
   }
 
   // 3) NEW: derive from compiler paths (provided by hooks toolchain)
-  ndkRoot ??=
-      _ndkRootFromCompiler(ccPath) ??
-      _ndkRootFromCompiler(arPath) ??
-      _ndkRootFromCompiler(ldPath);
+  ndkRoot ??= _ndkRootFromCompiler(ccPath) ?? _ndkRootFromCompiler(arPath) ?? _ndkRootFromCompiler(ldPath);
 
   // If we got NDK, derive SDK (if missing)
   sdkRoot ??= _sdkRootFromNdk(ndkRoot);

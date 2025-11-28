@@ -5,30 +5,18 @@ part of 'turbo_jpeg.dart';
 /* ========================== Native FFI (C glue) ========================== */
 
 // version
-@ffi.Native<ffi.Int32 Function(ffi.Pointer<ffi.Uint8>, ffi.Int32)>(
-  symbol: 'tjx_version_str',
-)
+@ffi.Native<ffi.Int32 Function(ffi.Pointer<ffi.Uint8>, ffi.Int32)>(symbol: 'tjx_version_str')
 external int _tjx_version_str(ffi.Pointer<ffi.Uint8> out, int outLen);
 
 @ffi.Native<ffi.Int32 Function()>(symbol: 'tjx_version_int')
 external int _tjx_version_int();
 
 // handles
-@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Uint8>, ffi.Int32)>(
-  symbol: 'tjx_init_compress',
-)
-external ffi.Pointer<ffi.Void> _tjx_init_compress(
-  ffi.Pointer<ffi.Uint8> err,
-  int errLen,
-);
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Uint8>, ffi.Int32)>(symbol: 'tjx_init_compress')
+external ffi.Pointer<ffi.Void> _tjx_init_compress(ffi.Pointer<ffi.Uint8> err, int errLen);
 
-@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Uint8>, ffi.Int32)>(
-  symbol: 'tjx_init_decompress',
-)
-external ffi.Pointer<ffi.Void> _tjx_init_decompress(
-  ffi.Pointer<ffi.Uint8> err,
-  int errLen,
-);
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Uint8>, ffi.Int32)>(symbol: 'tjx_init_decompress')
+external ffi.Pointer<ffi.Void> _tjx_init_decompress(ffi.Pointer<ffi.Uint8> err, int errLen);
 
 @ffi.Native<ffi.Int32 Function(ffi.Pointer<ffi.Void>)>(symbol: 'tjx_destroy')
 external int _tjx_destroy(ffi.Pointer<ffi.Void> handle);
@@ -234,8 +222,5 @@ external int _tjx_transform_simple(
 );
 
 // Free TurboJPEG-allocated memory
-@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>(
-  symbol: 'tjx_free',
-  isLeaf: true,
-)
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Uint8>)>(symbol: 'tjx_free', isLeaf: true)
 external void _tjx_free(ffi.Pointer<ffi.Uint8> p);

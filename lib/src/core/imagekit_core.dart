@@ -79,15 +79,9 @@ final class Header {
   final int height;
   final Subsampling subsampling; // PNG returns s444
   final int colorspace; // codec specific (JPEG: TJCS_*, PNG/WebP: 0)
-  const Header({
-    required this.width,
-    required this.height,
-    required this.subsampling,
-    required this.colorspace,
-  });
+  const Header({required this.width, required this.height, required this.subsampling, required this.colorspace});
   @override
-  String toString() =>
-      'Header($width×$height, subsampling=$subsampling, colorspace=$colorspace)';
+  String toString() => 'Header($width×$height, subsampling=$subsampling, colorspace=$colorspace)';
 }
 
 /// Base exception for all codecs.
@@ -108,6 +102,7 @@ class TurboJpegException extends ImageKitException {
 class PngException extends ImageKitException {
   const PngException(super.code, super.message);
 }
+
 /// WebP-specific.
 class WebpException extends ImageKitException {
   const WebpException(super.code, super.message);
@@ -126,11 +121,7 @@ abstract class ImageCodec {
   Header getHeader(Uint8List data);
 
   /// Decode into tightly packed [pixelFormat]. Returns `width*height*bpp` bytes.
-  Uint8List decode(
-    Uint8List data, {
-    PixelFormat pixelFormat = PixelFormat.rgba,
-    int flags = Flags.none,
-  });
+  Uint8List decode(Uint8List data, {PixelFormat pixelFormat = PixelFormat.rgba, int flags = Flags.none});
 
   /// Encode pixels → compressed bytes. If [pitchBytes] is null, assumes tight rows.
   Uint8List encode(
@@ -170,18 +161,10 @@ class ImageCodecs {
       bytes[6] == 0x1A &&
       bytes[7] == 0x0A;
 
-  static bool _isJpeg(Uint8List bytes) =>
-      bytes.length >= 3 &&
-      bytes[0] == 0xFF &&
-      bytes[1] == 0xD8 &&
-      bytes[2] == 0xFF;
+  static bool _isJpeg(Uint8List bytes) => bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
 
   /// Provide concrete implementations via lazy imports in your project wires.
-  static ImageCodec forBytes(
-    Uint8List bytes, {
-    required ImageCodec jpeg,
-    required ImageCodec png,
-  }) {
+  static ImageCodec forBytes(Uint8List bytes, {required ImageCodec jpeg, required ImageCodec png}) {
     if (_isJpeg(bytes)) return jpeg;
     if (_isPng(bytes)) return png;
     // Fallback: try JPEG first (common) then PNG.

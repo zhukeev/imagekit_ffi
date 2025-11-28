@@ -10,9 +10,7 @@ import 'lib_builder.dart';
 const _logTag = 'webp';
 
 final class WebpBuild extends LibBuilder {
-  WebpBuild(super.input, super.output)
-    : defines = WebpDefines.fromHooks(input),
-      super(logTag: _logTag);
+  WebpBuild(super.input, super.output) : defines = WebpDefines.fromHooks(input), super(logTag: _logTag);
 
   final WebpDefines defines;
 
@@ -23,9 +21,8 @@ final class WebpBuild extends LibBuilder {
     logger.info('$_logTag: tarballUri ${defines.tarballUri}');
     logger.info('$_logTag: downloadUrl ${defines.downloadUrl}');
 
-    final ws = Directory(
-      p.join(input.packageRoot.path, '.dart_tool', 'native_build', 'webp'),
-    )..createSync(recursive: true);
+    final ws = Directory(p.join(input.packageRoot.path, '.dart_tool', 'native_build', 'webp'))
+      ..createSync(recursive: true);
 
     final srcDir = await _stageSources(ws);
 
@@ -44,20 +41,16 @@ final class WebpBuild extends LibBuilder {
 
     switch (input.config.code.targetOS) {
       case OS.macOS:
-        built = await buildMacStatic(
-          srcDir: srcDir,
-          ws: ws,
-          versionTag: defines.version,
-          extraDefs: extraDefs,
-        );
+        built = await buildMacStatic(srcDir: srcDir, ws: ws, versionTag: defines.version, extraDefs: extraDefs);
         break;
       case OS.iOS:
-        built = await buildIOSStatic(
-          srcDir: srcDir,
-          ws: ws,
-          versionTag: defines.version,
-          extraDefs: extraDefs,
-        );
+        built = await buildIOSStatic(srcDir: srcDir, ws: ws, versionTag: defines.version, extraDefs: extraDefs);
+        break;
+      case OS.linux:
+        built = await buildLinuxStatic(srcDir: srcDir, ws: ws, versionTag: defines.version);
+        break;
+      case OS.windows:
+        built = await buildWindowsStatic(srcDir: srcDir, ws: ws, versionTag: defines.version);
         break;
       case OS.android:
         built = await buildAndroidStatic(
@@ -74,9 +67,7 @@ final class WebpBuild extends LibBuilder {
     }
 
     final includePaths = <String>[built['include']!];
-    final localIncDir = Directory(
-      p.join(input.packageRoot.path, 'native', 'webp'),
-    );
+    final localIncDir = Directory(p.join(input.packageRoot.path, 'native', 'webp'));
     if (localIncDir.existsSync()) includePaths.add(localIncDir.path);
 
     final libraryDirs = <String>[built['lib']!];
@@ -85,8 +76,7 @@ final class WebpBuild extends LibBuilder {
     // On some platforms libsharpyuv is separate; add it if present.
     final libs = <String>['webp', 'sharpyuv'];
 
-    if (input.config.code.targetOS == OS.android ||
-        input.config.code.targetOS == OS.linux) {
+    if (input.config.code.targetOS == OS.android || input.config.code.targetOS == OS.linux) {
       // pow() живёт в libm
       libs.add('m');
     }
@@ -106,8 +96,7 @@ final class WebpBuild extends LibBuilder {
   }
 
   Future<String> _stageSources(Directory ws) async {
-    final srcRoot = Directory(p.join(ws.path, 'src'))
-      ..createSync(recursive: true);
+    final srcRoot = Directory(p.join(ws.path, 'src'))..createSync(recursive: true);
     final dst = Directory(p.join(srcRoot.path, 'libwebp-${defines.version}'));
     if (dst.existsSync()) return dst.path;
 
@@ -122,16 +111,14 @@ final class WebpBuild extends LibBuilder {
     }
 
     final url = Uri.parse(defines.downloadUrl);
-    final cache = Directory(p.join(ws.path, 'cache'))
-      ..createSync(recursive: true);
+    final cache = Directory(p.join(ws.path, 'cache'))..createSync(recursive: true);
     final tar = File(p.join(cache.path, 'libwebp-${defines.version}.tar.gz'));
     await downloadTo(tar, url);
     await extractTarGz(tar, srcRoot);
 
-    final extractedTop = Directory(srcRoot.path)
-        .listSync()
-        .whereType<Directory>()
-        .firstWhere((d) => p.basename(d.path).startsWith('libwebp-'));
+    final extractedTop = Directory(
+      srcRoot.path,
+    ).listSync().whereType<Directory>().firstWhere((d) => p.basename(d.path).startsWith('libwebp-'));
     if (extractedTop.path != dst.path) {
       await extractedTop.rename(dst.path);
     }

@@ -51,26 +51,11 @@ final class TurboJpeg extends ImageCodec with FfiHelpers {
       throw TurboJpegException(-100, 'tjx_init_decompress failed: $msg');
     }
     try {
-      final rc = _tjx_decompress_header3(
-        dec,
-        jpg,
-        jpegBytes.length,
-        w,
-        h,
-        ss,
-        cs,
-        err,
-        errCap,
-      );
+      final rc = _tjx_decompress_header3(dec, jpg, jpegBytes.length, w, h, ss, cs, err, errCap);
       if (rc != 0) {
         throw TurboJpegException(rc, readCString(err));
       }
-      return Header(
-        width: w.value,
-        height: h.value,
-        subsampling: Subsampling.values[ss.value],
-        colorspace: cs.value,
-      );
+      return Header(width: w.value, height: h.value, subsampling: Subsampling.values[ss.value], colorspace: cs.value);
     } finally {
       _tjx_destroy(dec);
       freeAll([jpg, w, h, ss, cs, err]);
@@ -82,11 +67,7 @@ final class TurboJpeg extends ImageCodec with FfiHelpers {
   /// The returned `Uint8List` length is `width * height * pixelFormat.bytesPerPixel`.
   /// If you need a custom row stride, pass [Flags.bottomUp] and post-process as needed.
   @override
-  Uint8List decode(
-    Uint8List jpegBytes, {
-    PixelFormat pixelFormat = PixelFormat.rgb,
-    int flags = Flags.fastDct,
-  }) {
+  Uint8List decode(Uint8List jpegBytes, {PixelFormat pixelFormat = PixelFormat.rgb, int flags = Flags.fastDct}) {
     final header = getHeader(jpegBytes);
     final outLen = header.width * header.height * pixelFormat.bytesPerPixel;
 
@@ -259,66 +240,31 @@ final class TurboJpeg extends ImageCodec with FfiHelpers {
 
   /// Shortcut for 90° rotation. Set [perfect] to require MCU-perfect rotation (no trimming).
   Uint8List rotate90(Uint8List jpg, {bool perfect = false, int flags = 0}) =>
-      transform(
-        jpg,
-        op: TransformOp.rot90,
-        options: perfect ? XformOptions.perfect : 0,
-        flags: flags,
-      );
+      transform(jpg, op: TransformOp.rot90, options: perfect ? XformOptions.perfect : 0, flags: flags);
 
   /// Shortcut for 180° rotation.
   Uint8List rotate180(Uint8List jpg, {bool perfect = false, int flags = 0}) =>
-      transform(
-        jpg,
-        op: TransformOp.rot180,
-        options: perfect ? XformOptions.perfect : 0,
-        flags: flags,
-      );
+      transform(jpg, op: TransformOp.rot180, options: perfect ? XformOptions.perfect : 0, flags: flags);
 
   /// Shortcut for 270° rotation.
   Uint8List rotate270(Uint8List jpg, {bool perfect = false, int flags = 0}) =>
-      transform(
-        jpg,
-        op: TransformOp.rot270,
-        options: perfect ? XformOptions.perfect : 0,
-        flags: flags,
-      );
+      transform(jpg, op: TransformOp.rot270, options: perfect ? XformOptions.perfect : 0, flags: flags);
 
   /// Horizontal flip (lossless).
   Uint8List flipH(Uint8List jpg, {bool perfect = false, int flags = 0}) =>
-      transform(
-        jpg,
-        op: TransformOp.hflip,
-        options: perfect ? XformOptions.perfect : 0,
-        flags: flags,
-      );
+      transform(jpg, op: TransformOp.hflip, options: perfect ? XformOptions.perfect : 0, flags: flags);
 
   /// Vertical flip (lossless).
   Uint8List flipV(Uint8List jpg, {bool perfect = false, int flags = 0}) =>
-      transform(
-        jpg,
-        op: TransformOp.vflip,
-        options: perfect ? XformOptions.perfect : 0,
-        flags: flags,
-      );
+      transform(jpg, op: TransformOp.vflip, options: perfect ? XformOptions.perfect : 0, flags: flags);
 
   /// Matrix transpose (swap X and Y), lossless.
   Uint8List transpose(Uint8List jpg, {bool perfect = false, int flags = 0}) =>
-      transform(
-        jpg,
-        op: TransformOp.transpose,
-        options: perfect ? XformOptions.perfect : 0,
-        flags: flags,
-      );
+      transform(jpg, op: TransformOp.transpose, options: perfect ? XformOptions.perfect : 0, flags: flags);
 
   /// Matrix transverse (reverse across secondary diagonal), lossless.
   Uint8List transverse(Uint8List jpg, {bool perfect = false, int flags = 0}) =>
-      transform(
-        jpg,
-        op: TransformOp.transverse,
-        options: perfect ? XformOptions.perfect : 0,
-        flags: flags,
-      );
+      transform(jpg, op: TransformOp.transverse, options: perfect ? XformOptions.perfect : 0, flags: flags);
 
   /// Lossless crop (optionally MCU-safe).
   ///
@@ -341,25 +287,13 @@ final class TurboJpeg extends ImageCodec with FfiHelpers {
     if (perfect) opts |= XformOptions.perfect;
     if (gray) opts |= XformOptions.gray;
 
-    return transform(
-      jpg,
-      op: TransformOp.none,
-      options: opts,
-      cropX: x,
-      cropY: y,
-      cropW: w,
-      cropH: h,
-      flags: flags,
-    );
+    return transform(jpg, op: TransformOp.none, options: opts, cropX: x, cropY: y, cropW: w, cropH: h, flags: flags);
   }
 
   /// JPEG → planar **YUV420** (Y, U, V planes).
   ///
   /// The returned planes are tightly packed with strides computed by [yuv420Strides].
-  ({Uint8List y, Uint8List u, Uint8List v}) decodeToYuv420(
-    Uint8List jpegBytes, {
-    int flags = Flags.fastDct,
-  }) {
+  ({Uint8List y, Uint8List u, Uint8List v}) decodeToYuv420(Uint8List jpegBytes, {int flags = Flags.fastDct}) {
     final h = getHeader(jpegBytes);
     final (yStride, uStride, vStride) = yuv420Strides(h.width);
     final (ySize, uSize, vSize) = yuv420PlaneSizes(h.width, h.height);
@@ -463,10 +397,7 @@ final class TurboJpeg extends ImageCodec with FfiHelpers {
 
       final nativeBuf = outPtr.value;
       if (nativeBuf == ffi.nullptr) {
-        throw TurboJpegException(
-          -999,
-          'Native compressor returned null buffer',
-        );
+        throw TurboJpegException(-999, 'Native compressor returned null buffer');
       }
       final bytes = nativeBuf.cast<ffi.Uint8>().asTypedList(outLen.value);
       final copy = Uint8List.fromList(bytes);
@@ -481,8 +412,7 @@ final class TurboJpeg extends ImageCodec with FfiHelpers {
   /* ---------- YUV 4:2:0 helpers ---------- */
 
   /// Returns `(yStride, uStride, vStride)` for **YUV420** given an image [width].
-  (int yStride, int uStride, int vStride) yuv420Strides(int width) =>
-      (width, (width + 1) >> 1, (width + 1) >> 1);
+  (int yStride, int uStride, int vStride) yuv420Strides(int width) => (width, (width + 1) >> 1, (width + 1) >> 1);
 
   /// Returns `(ySize, uSize, vSize)` for **YUV420** given [width] and [height].
   ///

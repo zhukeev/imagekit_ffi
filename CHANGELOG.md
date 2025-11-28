@@ -1,3 +1,8 @@
+## 0.0.7
+
+* Feature: Added `skip_platform` user-define flag to skip building specific targets (android/ios/macos/linux/windows).
+* Docs: Documented the new flag in README.
+
 ## 0.0.6
 
 * REFACTOR: Moved build helpers to a dedicated 'helpers' directory for better project structure.
