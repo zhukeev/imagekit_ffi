@@ -59,7 +59,7 @@ extern "C"
       int32_t flags, /* ignored for PNG, kept for symmetry */
       char *err, int32_t err_len);
 
-  int32_t ik_png_encode_from_pixels_ex(const uint8_t *pixels,
+  IKPNG_EXPORT int32_t ik_png_encode_from_pixels_ex(const uint8_t *pixels,
                                        int32_t width, int32_t pitch, int32_t height,
                                        int32_t pf,
                                        int32_t compression_level, // 0..9
@@ -68,14 +68,8 @@ extern "C"
                                        uint8_t **out_png, int64_t *out_len,
                                        uint8_t *err, int32_t err_len);
 
-  void ik_png_free(uint8_t *p);
-
-#ifdef __cplusplus
-}
-#endif
-
-/* Free buffer allocated by ik_png_encode_from_pixels/ik_png_transform_simple. */
-IKPNG_EXPORT void ik_png_free(uint8_t *p);
+  /* Free buffer allocated by ik_png_encode_from_pixels/ik_png_transform_simple. */
+  IKPNG_EXPORT void ik_png_free(uint8_t *p);
 
 #ifdef __cplusplus
 }

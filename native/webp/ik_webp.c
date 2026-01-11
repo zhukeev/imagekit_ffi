@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "ik_webp.h"
 #include "webp/decode.h"
 #include "webp/encode.h"
 
@@ -49,7 +50,7 @@ static void err_set(char *dst, int cap, const char *msg)
 }
 
 // ---------------- API: version string ----------------------------------------
-int32_t ik_webp_version_str(uint8_t *out, int32_t cap)
+IK_EXPORT int32_t ik_webp_version_str(uint8_t *out, int32_t cap)
 {
   if (!out || cap <= 0)
     return -1;
@@ -64,9 +65,9 @@ int32_t ik_webp_version_str(uint8_t *out, int32_t cap)
 }
 
 // ---------------- API: get info (w,h) ----------------------------------------
-int32_t ik_webp_get_info(const uint8_t *data, int32_t len,
-                         int32_t *w, int32_t *h,
-                         uint8_t *err, int32_t err_cap)
+IK_EXPORT int32_t ik_webp_get_info(const uint8_t *data, int32_t len,
+                                    int32_t *w, int32_t *h,
+                                    uint8_t *err, int32_t err_cap)
 {
   if (!data || len <= 0)
   {
@@ -109,11 +110,11 @@ static WEBP_CSP_MODE csp_for_decode(int pixel_format)
 }
 
 // ---------------- API: decode to pixels --------------------------------------
-int32_t ik_webp_decode_to_pixels(const uint8_t *data, int32_t len,
-                                 uint8_t *out, int32_t out_pitch,
-                                 int32_t out_w, int32_t out_h,
-                                 int32_t pixel_format,
-                                 uint8_t *err, int32_t err_cap)
+IK_EXPORT int32_t ik_webp_decode_to_pixels(const uint8_t *data, int32_t len,
+                                            uint8_t *out, int32_t out_pitch,
+                                            int32_t out_w, int32_t out_h,
+                                            int32_t pixel_format,
+                                            uint8_t *err, int32_t err_cap)
 {
   if (!data || len <= 0 || !out || out_w <= 0 || out_h <= 0) {
     err_set((char*)err, err_cap, "bad args");
@@ -183,9 +184,10 @@ int32_t ik_webp_decode_to_pixels(const uint8_t *data, int32_t len,
 // lossy: only 4:2:0; emulate 4:4:4 through lossless/near-lossless
 static int choose_lossless_for_subsampling(int subsampling)
 {
-  // Dart Subsampling.s444 -> request "no subsampling"
-  // s422 coerced to 420 in Dart side already
-  const int S444 = 2;
+  // Dart Subsampling enum values:
+  //   s444=0, s422=1, y420=2, gray=3, s440=4, s411=5
+  // Only s444 (value 0) should trigger lossless mode
+  const int S444 = 0;
   return (subsampling == S444) ? 1 : 0;
 }
 
@@ -277,13 +279,13 @@ static int import_picture(WebPPicture* pic, const uint8_t* pixels,
 
 
 // ---------------- API: encode from pixels ------------------------------------
-int32_t ik_webp_encode_from_pixels_ex(const uint8_t *pixels,
-                                      int32_t width, int32_t pitch, int32_t height,
-                                      int32_t pixel_format,
-                                      int32_t subsampling,
-                                      int32_t quality,
-                                      uint8_t **out, int64_t *out_len,
-                                      uint8_t *err, int32_t err_cap)
+IK_EXPORT int32_t ik_webp_encode_from_pixels_ex(const uint8_t *pixels,
+                                                 int32_t width, int32_t pitch, int32_t height,
+                                                 int32_t pixel_format,
+                                                 int32_t subsampling,
+                                                 int32_t quality,
+                                                 uint8_t **out, int64_t *out_len,
+                                                 uint8_t *err, int32_t err_cap)
 {
   if (!pixels || width <= 0 || height <= 0 || !out || !out_len)
   {
@@ -486,14 +488,16 @@ static void rgba_crop(uint8_t *dst, const uint8_t *src,
 }
 
 // ---------------- API: transform (decode RGBA -> op -> encode) ----------------
-int32_t ik_webp_transform_simple(const uint8_t *data, int32_t len,
-                                 int32_t op, int32_t options,
-                                 int32_t cropX, int32_t cropY,
-                                 int32_t cropW, int32_t cropH,
-                                 uint8_t **out, int64_t *out_len,
-                                 int32_t /*flags*/,
-                                 uint8_t *err, int32_t err_cap)
+IK_EXPORT int32_t ik_webp_transform_simple(const uint8_t *data, int32_t len,
+                                            int32_t op, int32_t options,
+                                            int32_t cropX, int32_t cropY,
+                                            int32_t cropW, int32_t cropH,
+                                            uint8_t **out, int64_t *out_len,
+                                            int32_t flags,
+                                            uint8_t *err, int32_t err_cap)
 {
+  (void)flags;  // suppress unused parameter warning
+  
   if (!data || len <= 0 || !out || !out_len)
   {
     err_set((char *)err, err_cap, "bad args");
@@ -684,7 +688,7 @@ int32_t ik_webp_transform_simple(const uint8_t *data, int32_t len,
 }
 
 // ---------------- API: free ---------------------------------------------------
-void ik_webp_free(uint8_t *p)
+IK_EXPORT void ik_webp_free(uint8_t *p)
 {
   if (p)
     free(p);

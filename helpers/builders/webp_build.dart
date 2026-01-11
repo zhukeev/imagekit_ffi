@@ -1,6 +1,6 @@
 import 'dart:io';
+
 import 'package:code_assets/code_assets.dart';
-import 'package:logging/logging.dart';
 import 'package:native_toolchain_c/native_toolchain_c.dart';
 import 'package:path/path.dart' as p;
 
@@ -21,14 +21,17 @@ final class WebpBuild extends LibBuilder {
     logger.info('$_logTag: tarballUri ${defines.tarballUri}');
     logger.info('$_logTag: downloadUrl ${defines.downloadUrl}');
 
-    final ws = Directory(p.join(input.packageRoot.path, '.dart_tool', 'native_build', 'webp'))
-      ..createSync(recursive: true);
+    final packageRootPath = p.fromUri(input.packageRoot);
+    final ws = Directory(p.join(packageRootPath, '.dart_tool', 'native_build', 'webp'))..createSync(recursive: true);
 
     final srcDir = await _stageSources(ws);
+    final version = defines.version;
 
-    Map<String, String> built = {};
-    final extraDefs = <String>[
-      '-DBUILD_SHARED_LIBS=OFF',
+    final Map<String, String> paths;
+    final os = input.config.code.targetOS;
+
+    final extraDefs = [
+      '-DWEBP_BUILD_ANIM_UTILS=OFF',
       '-DWEBP_BUILD_CWEBP=OFF',
       '-DWEBP_BUILD_DWEBP=OFF',
       '-DWEBP_BUILD_GIF2WEBP=OFF',
@@ -36,93 +39,139 @@ final class WebpBuild extends LibBuilder {
       '-DWEBP_BUILD_VWEBP=OFF',
       '-DWEBP_BUILD_WEBPINFO=OFF',
       '-DWEBP_BUILD_WEBPMUX=OFF',
-      '-DWEBP_BUILD_ANIM_UTILS=OFF',
+      '-DWEBP_BUILD_EXTRAS=OFF',
     ];
 
-    switch (input.config.code.targetOS) {
-      case OS.macOS:
-        built = await buildMacStatic(srcDir: srcDir, ws: ws, versionTag: defines.version, extraDefs: extraDefs);
-        break;
-      case OS.iOS:
-        built = await buildIOSStatic(srcDir: srcDir, ws: ws, versionTag: defines.version, extraDefs: extraDefs);
-        break;
-      case OS.linux:
-        built = await buildLinuxStatic(srcDir: srcDir, ws: ws, versionTag: defines.version);
-        break;
-      case OS.windows:
-        built = await buildWindowsStatic(srcDir: srcDir, ws: ws, versionTag: defines.version);
-        break;
-      case OS.android:
-        built = await buildAndroidStatic(
-          srcDir: srcDir,
-          ws: ws,
-          versionTag: defines.version,
-          androidSdkRoot: defines.androidSdkRoot,
-          androidNdkRoot: defines.androidNdkRoot,
-          extraDefs: extraDefs,
-        );
-        break;
-      default:
-        throw UnsupportedError('Unsupported OS: ${input.config.code.targetOS}');
+    if (os == OS.windows) {
+      paths = await buildWindowsStatic(srcDir: srcDir, ws: ws, versionTag: version, extraDefs: extraDefs);
+    } else if (os == OS.macOS) {
+      paths = await buildMacStatic(srcDir: srcDir, ws: ws, versionTag: version, extraDefs: extraDefs);
+    } else if (os == OS.linux) {
+      paths = await buildLinuxStatic(srcDir: srcDir, ws: ws, versionTag: version, extraDefs: extraDefs);
+    } else if (os == OS.iOS) {
+      paths = await buildIOSStatic(srcDir: srcDir, ws: ws, versionTag: version, extraDefs: extraDefs);
+    } else if (os == OS.android) {
+      paths = await buildAndroidStatic(
+        srcDir: srcDir,
+        ws: ws,
+        versionTag: version,
+        androidSdkRoot: defines.androidSdkRoot,
+        androidNdkRoot: defines.androidNdkRoot,
+        extraDefs: extraDefs,
+      );
+    } else {
+      throw UnsupportedError('Unsupported OS: $os');
     }
 
-    final includePaths = <String>[built['include']!];
-    final localIncDir = Directory(p.join(input.packageRoot.path, 'native', 'webp'));
-    if (localIncDir.existsSync()) includePaths.add(localIncDir.path);
+    final includeDir = paths['include']!;
+    final libDir = paths['lib']!;
+    final nativeSrc = p.join(packageRootPath, 'native', 'webp');
 
-    final libraryDirs = <String>[built['lib']!];
+    if (Platform.isWindows) {
+      await _buildGlueDllWindows(nativeSrc: nativeSrc, includeDir: includeDir, libDir: libDir);
+    } else {
+      await _buildGlueDllCBuilder(nativeSrc: nativeSrc, includeDir: includeDir, libDir: libDir);
+    }
+  }
 
-    // Build our shim that links to static libwebp.
-    // On some platforms libsharpyuv is separate; add it if present.
-    final libs = <String>['webp', 'sharpyuv'];
+  /// Build glue DLL on Windows using cl.exe directly with VS environment
+  Future<void> _buildGlueDllWindows({
+    required String nativeSrc,
+    required String includeDir,
+    required String libDir,
+  }) async {
+    final env = await getVsEnvironment();
 
-    if (input.config.code.targetOS == OS.android || input.config.code.targetOS == OS.linux) {
-      // pow() живёт в libm
-      libs.add('m');
+    final packageRootPath = p.fromUri(input.packageRoot);
+    final outDir = Directory(p.join(packageRootPath, '.dart_tool', 'native_build', 'webp', 'out'))
+      ..createSync(recursive: true);
+
+    final dllName = 'imagekit_ffi_webp.dll';
+    final dllPath = p.join(outDir.path, dllName);
+    final srcFile = p.join(nativeSrc, 'ik_webp.c');
+
+    final args = [
+      '/O2',
+      '/DRELEASE',
+      '/DNDEBUG',
+      '/MD',  // Use dynamic CRT (matches how libwebp was built)
+      '/I$includeDir',
+      '/I$nativeSrc',
+      '/LD',
+      '/Fe:$dllPath',
+      srcFile,
+      '/link',
+      '/MACHINE:X64',
+      '/LIBPATH:$libDir',
+      'libwebp.lib', // Changed from webp.lib
+      'libsharpyuv.lib', // Changed from sharpyuv.lib
+      // Add required Windows/CRT libraries
+      'libcmt.lib', // C runtime (static)
+      'libvcruntime.lib', // VC runtime
+      'libucrt.lib', // Universal CRT
+      '/NODEFAULTLIB:msvcrt.lib', // Avoid CRT conflicts
+    ];
+
+    logger.info('Building Windows DLL with cl.exe');
+    logger.info('> cl.exe ${args.join(' ')}');
+
+    final result = await Process.run('cl.exe', args, environment: env, workingDirectory: outDir.path);
+
+    if (result.exitCode != 0) {
+      logger.severe('cl.exe stdout: ${result.stdout}');
+      logger.severe('cl.exe stderr: ${result.stderr}');
+      throw Exception('Failed to compile webp glue DLL: exit code ${result.exitCode}');
     }
 
-    final cb = CBuilder.library(
-      name: '${input.packageName}_webp',
-      assetName: 'src/webp/webp.dart',
-      sources: [p.join('native', 'webp', 'ik_webp.c')],
-      includes: includePaths,
-      libraries: libs,
-      libraryDirectories: libraryDirs,
-      linkModePreference: LinkModePreference.dynamic,
+    logger.info('Built: $dllPath');
+
+    output.assets.code.add(
+      CodeAsset(
+        package: input.packageName,
+        name: 'src/webp/webp.dart',
+        linkMode: DynamicLoadingBundled(),
+        file: Uri.file(dllPath),
+      ),
     );
 
-    await cb.run(input: input, output: output, logger: Logger(_logTag));
-    logger.info('$_logTag: native build DONE → ${input.config.code.targetOS}');
+    output.addDependency(Uri.file(srcFile));
+  }
+
+  /// Build glue DLL on non-Windows using CBuilder
+  Future<void> _buildGlueDllCBuilder({
+    required String nativeSrc,
+    required String includeDir,
+    required String libDir,
+  }) async {
+    final cbuilder = CBuilder.library(
+      name: 'imagekit_ffi_webp',
+      assetName: 'src/webp/webp.dart',
+      sources: [p.join(nativeSrc, 'ik_webp.c')],
+      includes: [includeDir, nativeSrc],
+      flags: ['-O2', '-DRELEASE', '-DNDEBUG', '-L$libDir', '-lwebp', '-lsharpyuv'],
+    );
+
+    await cbuilder.run(input: input, output: output, logger: logger);
   }
 
   Future<String> _stageSources(Directory ws) async {
-    final srcRoot = Directory(p.join(ws.path, 'src'))..createSync(recursive: true);
-    final dst = Directory(p.join(srcRoot.path, 'libwebp-${defines.version}'));
-    if (dst.existsSync()) return dst.path;
+    final version = defines.version;
+    final cacheDir = Directory(p.join(ws.path, 'cache'))..createSync(recursive: true);
+    final tarball = File(p.join(cacheDir.path, 'libwebp-$version.tar.gz'));
 
-    if (defines.vendoredPath != null) {
-      final from = Directory(defines.vendoredPath!);
-      if (!from.existsSync()) {
-        throw StateError('Vendored path not found: ${from.path}');
-      }
-      logger.info('Using vendored sources at ${from.path}');
-      await copyTree(from, dst);
-      return dst.path;
+    if (!tarball.existsSync()) {
+      final url = defines.tarballUri ?? defines.downloadUrl;
+      await downloadTo(tarball, Uri.parse(url));
     }
 
-    final url = Uri.parse(defines.downloadUrl);
-    final cache = Directory(p.join(ws.path, 'cache'))..createSync(recursive: true);
-    final tar = File(p.join(cache.path, 'libwebp-${defines.version}.tar.gz'));
-    await downloadTo(tar, url);
-    await extractTarGz(tar, srcRoot);
+    final srcDir = Directory(p.join(ws.path, 'src'));
+    final webpSrcDir = Directory(p.join(srcDir.path, 'libwebp-$version'));
 
-    final extractedTop = Directory(
-      srcRoot.path,
-    ).listSync().whereType<Directory>().firstWhere((d) => p.basename(d.path).startsWith('libwebp-'));
-    if (extractedTop.path != dst.path) {
-      await extractedTop.rename(dst.path);
+    if (!webpSrcDir.existsSync()) {
+      await extractTarGz(tarball, srcDir);
     }
-    logger.info('Sources staged → ${dst.path}');
-    return dst.path;
+
+    logger.info('Sources staged → ${webpSrcDir.path}');
+    return webpSrcDir.path;
   }
 }
