@@ -1,10 +1,11 @@
 import 'dart:io';
+
+import 'package:archive/archive.dart';
+import 'package:archive/archive_io.dart';
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
-import 'package:archive/archive.dart';
-import 'package:archive/archive_io.dart';
 
 /// Base class for native library builders.
 /// Shares: download, tar.gz extraction, CMake build for macOS/iOS/Android,
@@ -75,9 +76,16 @@ abstract class LibBuilder {
 
   /* --------------------------------- CMake -------------------------------- */
 
-  Future<void> cmake(List<String> args) async {
+  Future<void> cmake(List<String> args, {Map<String, String>? env}) async {
     logger.info('> cmake ${args.join(' ')}');
-    final r = await Process.run('cmake', args);
+
+    // On Windows, ensure we have the VS environment
+    Map<String, String>? effectiveEnv = env;
+    if (Platform.isWindows && env == null) {
+      effectiveEnv = await _getVsEnvironment();
+    }
+
+    final r = await Process.run('cmake', args, environment: effectiveEnv);
     if (r.exitCode != 0) {
       stderr.write(r.stdout);
       stderr.write(r.stderr);
@@ -87,6 +95,121 @@ abstract class LibBuilder {
     if (out.isNotEmpty) logger.info(out);
     final err = (r.stderr ?? '').toString().trim();
     if (err.isNotEmpty) logger.info(err);
+  }
+
+  /// Get the vcvars script path from hooks input or find it
+  String? _getVcVarsScript() {
+    // First try from input.json
+    try {
+      final cc = (input.json['config'] as Map?)?['extensions']?['code_assets']?['c_compiler'];
+      if (cc is Map) {
+        final windows = cc['windows'] as Map?;
+        if (windows != null) {
+          final devPrompt = windows['developer_command_prompt'] as Map?;
+          if (devPrompt != null) {
+            final script = devPrompt['script'] as String?;
+            if (script != null && File(script).existsSync()) {
+              return script;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: search for vcvars64.bat in common VS locations
+    final vsLocations = [
+      r'C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat',
+      r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat',
+      r'C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Auxiliary\Build\vcvars64.bat',
+      r'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat',
+      r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat',
+    ];
+
+    for (final loc in vsLocations) {
+      if (File(loc).existsSync()) {
+        return loc;
+      }
+    }
+
+    return null;
+  }
+
+  /// Public method to get VS environment for Windows builds
+  Future<Map<String, String>> getVsEnvironment() async {
+    if (!Platform.isWindows) {
+      return Platform.environment;
+    }
+    return _getVsEnvironment();
+  }
+
+  /// Build environment map by running vcvars64.bat and capturing variables
+  Future<Map<String, String>> _getVsEnvironment() async {
+    final vcvars = _getVcVarsScript();
+    if (vcvars == null) {
+      logger.warning('vcvars script path not found in input.json, using current environment');
+      return Platform.environment;
+    }
+
+    final vcvarsFile = File(vcvars);
+    if (!vcvarsFile.existsSync()) {
+      logger.warning('vcvars script not found at: $vcvars, using current environment');
+      return Platform.environment;
+    }
+
+    logger.info('Running vcvars: $vcvars');
+
+    // Use a batch file approach - write a temp batch that calls vcvars then outputs env
+    final tempDir = Directory.systemTemp;
+    final batchFile = File(p.join(tempDir.path, 'flutter_vcvars_${DateTime.now().millisecondsSinceEpoch}.bat'));
+
+    try {
+      // Write batch file that calls vcvars and then outputs all environment variables
+      await batchFile.writeAsString('''
+@echo off
+call "$vcvars" >nul 2>&1
+if errorlevel 1 exit /b 1
+set
+''');
+
+      final result = await Process.run('cmd.exe', ['/c', batchFile.path]);
+
+      if (result.exitCode != 0) {
+        logger.warning('Failed to run vcvars batch (exit ${result.exitCode})');
+        logger.warning('stderr: ${result.stderr}');
+        return Platform.environment;
+      }
+
+      final env = <String, String>{};
+      for (final line in (result.stdout as String).split('\n')) {
+        final idx = line.indexOf('=');
+        if (idx > 0) {
+          final key = line.substring(0, idx).trim();
+          final value = line.substring(idx + 1).trim();
+          if (key.isNotEmpty && !key.startsWith('*')) {
+            env[key] = value;
+          }
+        }
+      }
+
+      // Verify we got the LIB variable
+      if (env['LIB'] == null || env['LIB']!.isEmpty) {
+        logger.warning('LIB not set after vcvars, environment may be incomplete');
+        logger.info('Available keys: ${env.keys.take(20).join(', ')}...');
+        return Platform.environment;
+      }
+
+      logger.info('VS environment loaded successfully');
+      logger.info('LIB: ${env['LIB']?.substring(0, 80)}...');
+
+      return env;
+    } finally {
+      // Clean up temp batch file
+      try {
+        if (batchFile.existsSync()) {
+          batchFile.deleteSync();
+        }
+      } catch (_) {}
+    }
   }
 
   Future<String> runAndRead(String exe, List<String> args, {String? cwd, Map<String, String>? env}) async {
@@ -121,9 +244,40 @@ abstract class LibBuilder {
       _ => 'x64',
     };
 
+    // CMake processor name for proper CPU detection
+    final processor = switch (input.config.code.targetArchitecture) {
+      Architecture.x64 => 'AMD64',
+      Architecture.arm64 => 'ARM64',
+      Architecture.arm => 'ARM',
+      _ => 'AMD64',
+    };
+
     final build = Directory(p.join(ws.path, 'build', 'windows-$arch-$versionTag'))..createSync(recursive: true);
 
     final install = Directory(p.join(ws.path, 'install', 'windows-$arch-$versionTag'))..createSync(recursive: true);
+
+    // Get VS environment with LIB/INCLUDE set properly
+    var vsEnv = await _getVsEnvironment();
+
+    // Ensure MSVC cl.exe is before Clang in PATH to avoid CMake picking Clang
+    final currentPath = vsEnv['PATH'] ?? Platform.environment['PATH'] ?? '';
+    final pathParts = currentPath.split(';');
+
+    // Find MSVC bin directory and move it to the front
+    final msvcBins = pathParts.where((p) => p.contains('MSVC') && p.contains('bin')).toList();
+    final otherPaths = pathParts.where((p) => !p.toLowerCase().contains('llvm')).toList();
+
+    if (msvcBins.isNotEmpty) {
+      vsEnv = Map<String, String>.from(vsEnv);
+      vsEnv['PATH'] = [...msvcBins, ...otherPaths.where((p) => !msvcBins.contains(p))].join(';');
+    }
+
+    // Create a toolchain file just for CMAKE_SYSTEM_PROCESSOR
+    final toolchainFile = File(p.join(build.path, 'toolchain.cmake'));
+    await toolchainFile.writeAsString('''
+set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_SYSTEM_PROCESSOR $processor)
+''');
 
     await cmake([
       '-S',
@@ -132,16 +286,21 @@ abstract class LibBuilder {
       build.path,
       '-G',
       'Ninja',
+      '-DCMAKE_TOOLCHAIN_FILE=${toolchainFile.path}',
       '-DCMAKE_BUILD_TYPE=Release',
       '-DENABLE_SHARED=OFF',
       '-DENABLE_STATIC=ON',
       '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
       '-DCMAKE_INSTALL_PREFIX=${install.path}',
+      // Force static CRT linkage - both via CMake policy and explicit flags
       '-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded',
+      '-DCMAKE_C_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG',
+      '-DCMAKE_CXX_FLAGS_RELEASE=/MT /O2 /Ob2 /DNDEBUG',
+      '-DCMAKE_POLICY_DEFAULT_CMP0091=NEW',
       ...extraDefs,
-    ]);
+    ], env: vsEnv);
 
-    await cmake(['--build', build.path, '--target', 'install', '--config', 'Release']);
+    await cmake(['--build', build.path, '--target', 'install', '--config', 'Release'], env: vsEnv);
 
     return {'include': p.join(install.path, 'include'), 'lib': p.join(install.path, 'lib')};
   }
@@ -308,10 +467,11 @@ abstract class LibBuilder {
     final arPath = (cc is Map) ? (cc['ar'] as String?) : null;
     final ldPath = (cc is Map) ? (cc['ld'] as String?) : null;
 
+    final packageRootPath = p.fromUri(input.packageRoot);
     final android = resolveAndroidPaths(
       definesSdkRoot: androidSdkRoot,
       definesNdkRoot: androidNdkRoot,
-      androidProjectDir: Directory('${input.packageRoot.path}/android'),
+      androidProjectDir: Directory(p.join(packageRootPath, 'android')),
       ccPath: ccPath,
       arPath: arPath,
       ldPath: ldPath,

@@ -1,11 +1,12 @@
 import 'dart:io';
+
 import 'package:code_assets/code_assets.dart';
 import 'package:logging/logging.dart';
 import 'package:native_toolchain_c/native_toolchain_c.dart';
 import 'package:path/path.dart' as p;
 
-import 'lib_builder.dart';
 import '../defines/tj_defines.dart';
+import 'lib_builder.dart';
 
 const _logTag = 'turbo_jpeg';
 
@@ -20,12 +21,15 @@ final class TurboJpegBuild extends LibBuilder {
     logger.info('$_logTag: version ${defines.version}');
     logger.info('$_logTag: downloadUrl ${defines.downloadUrl}');
 
-    final ws = Directory(p.join(input.packageRoot.path, '.dart_tool', 'native_build', 'turbo_jpeg'))
+    final packageRootPath = p.fromUri(input.packageRoot);
+    final ws = Directory(p.join(packageRootPath, '.dart_tool', 'native_build', 'turbo_jpeg'))
       ..createSync(recursive: true);
 
     final srcDir = await _stageSources(ws);
 
     Map<String, String> built = {};
+    // Disable SIMD on Windows to avoid CPU detection issues with CMake/Ninja
+    final windowsExtraDefs = ['-DWITH_SIMD=OFF'];
     switch (input.config.code.targetOS) {
       case OS.macOS:
         built = await buildMacStatic(srcDir: srcDir, ws: ws, versionTag: defines.version);
@@ -34,7 +38,7 @@ final class TurboJpegBuild extends LibBuilder {
         built = await buildLinuxStatic(srcDir: srcDir, ws: ws, versionTag: defines.version);
         break;
       case OS.windows:
-        built = await buildWindowsStatic(srcDir: srcDir, ws: ws, versionTag: defines.version);
+        built = await buildWindowsStatic(srcDir: srcDir, ws: ws, versionTag: defines.version, extraDefs: windowsExtraDefs);
         break;
       case OS.iOS:
         built = await buildIOSStatic(srcDir: srcDir, ws: ws, versionTag: defines.version);
@@ -53,19 +57,27 @@ final class TurboJpegBuild extends LibBuilder {
     }
 
     final includePaths = <String>[built['include']!];
-    final localIncDir = Directory(p.join(input.packageRoot.path, 'native', 'jpeg'));
+    final localIncDir = Directory(p.join(packageRootPath, 'native', 'jpeg'));
     if (localIncDir.existsSync()) includePaths.add(localIncDir.path);
 
     final libraryDirs = <String>[built['lib']!];
+
+    // On Windows with MSVC-like compilers, libjpeg-turbo names the static library 'turbojpeg-static'
+    final libName = input.config.code.targetOS == OS.windows ? 'turbojpeg-static' : 'turbojpeg';
+
+    // On Windows, we need to use static CRT (/MT) to match the static libs
+    final windowsFlags = <String>['/MT'];
+    final windowsLibs = <String>[libName, 'libucrt', 'libvcruntime'];
 
     final cb = CBuilder.library(
       name: '${input.packageName}_turbo_jpeg',
       assetName: 'src/jpeg/turbo_jpeg.dart',
       sources: [p.join('native', 'jpeg', 'turbo_jpeg.c')],
       includes: includePaths,
-      libraries: const ['turbojpeg'],
+      libraries: input.config.code.targetOS == OS.windows ? windowsLibs : [libName],
       libraryDirectories: libraryDirs,
       linkModePreference: LinkModePreference.dynamic,
+      flags: input.config.code.targetOS == OS.windows ? windowsFlags : [],
     );
 
     await cb.run(input: input, output: output, logger: Logger(_logTag));
